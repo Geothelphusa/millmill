@@ -17,21 +17,18 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: wasm32-unknown-unknown
-
+      - name: Install Trunk
+        run: cargo install trunk
       - name: Install Rust dependencies
         run: cargo build --release
-
       - name: Build Yew app
         run: trunk build --release
-
       - name: Build Tauri app
         run: cargo tauri build
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:

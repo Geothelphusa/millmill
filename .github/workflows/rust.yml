@@ -23,12 +23,14 @@ jobs:
           targets: wasm32-unknown-unknown
       - name: Install Trunk
         run: cargo install trunk
-      - name: Install Rust dependencies
+      - name: Build Cargo dependencies
         run: cargo build --release
       - name: Build Yew app
         run: trunk build --release
       - name: Install Tauri CLI
         run: cargo install tauri-cli
+      - name: Install Build dependencies
+        run: sudo apt-get install pkg-config libgio-2.0-dev libglib2.0-dev libgdk-3-dev libpango1.0-dev libcairo2-dev libgdk-pixbuf2.0-dev libatk1.0-dev libgdk-3-dev libgtk-3-dev libwebkit2gtk-4.1-dev libsoup-3.0-dev
       - name: Build Tauri app
         run: cargo tauri build
       - name: Upload artifact

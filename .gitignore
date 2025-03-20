@@ -24,3 +24,6 @@ Cargo.lock
 /dist/
 /target/
 /Cargo.lock
+
+# Rust 100 % repo
+index.html

@@ -1,4 +1,5 @@
 mod app;
+mod styles;
 
 use app::App;
 

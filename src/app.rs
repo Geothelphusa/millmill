@@ -2,6 +2,9 @@ use serde::{Deserialize, Serialize};
 use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
+use stylist::yew::styled_component;
+
+use crate::styles::*;
 
 #[wasm_bindgen]
 extern "C" {
@@ -14,7 +17,7 @@ struct GreetArgs<'a> {
     name: &'a str,
 }
 
-#[function_component(App)]
+#[styled_component(App)]
 pub fn app() -> Html {
     let greet_input_ref = use_node_ref();
 
@@ -59,7 +62,8 @@ pub fn app() -> Html {
     };
 
     html! {
-        <main class="container">
+        <main class={classes!(app_styles(), responsive_styles())}>
+            <div class="container">
             <h1>{"Welcome to Tauri + Yew"}</h1>
 
             <div class="row">
@@ -77,6 +81,7 @@ pub fn app() -> Html {
                 <button type="submit">{"Greet"}</button>
             </form>
             <p>{ &*greet_msg }</p>
+            </div>
         </main>
     }
 }

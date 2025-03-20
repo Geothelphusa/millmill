@@ -1,5 +1,5 @@
 [build]
-target = "./index.html"
+target = "./dist/index.html"
 
 [serve]
 port = 1420

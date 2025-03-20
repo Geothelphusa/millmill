@@ -1,0 +1,15 @@
+[build]
+target = "index.html"
+
+[serve]
+port = 1420
+open = false
+
+[watch]
+watch = ["src/"] # This setting remove to overheat your PC
+ignore = ["./src-tauri"]
+
+[[hooks]]
+stage = "pre_build"
+command = "cargo"
+args = ["build", "--release"]

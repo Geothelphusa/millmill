@@ -15,6 +15,7 @@ const FAVICON_PATH: &str = "https://raw.githubusercontent.com/Geothelphusa/geoth
                 meta(charset="utf-8");
                 title : "Geothelphusa";
                 link(data-trunk, rel="rust", href="Cargo.toml");
+                link(data-trunk, rel="copy-dir", href="public");
                 link(rel="icon", href=favicon_path);
                 meta(name="viewport", content="width=device-width, initial-scale=1"); // viewportメタタグを追加
                 style {

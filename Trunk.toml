@@ -9,6 +9,5 @@ open = false
 watch = ["src/"] # This setting remove to overheat your PC
 ignore = ["./src-tauri"]
 
-# [[hooks]]
-# stage = "pre_build"
-# command = "cargo build --release"
+[hooks]
+pre-build = ["cargo build --release"]

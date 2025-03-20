@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.tauri.app/config/2.3.1",
+  "$schema": "https://schema.tauri.app/config/2",
   "productName": "millmill",
   "version": "0.1.0",
   "identifier": "test",
@@ -7,7 +7,7 @@
     "beforeDevCommand": "trunk serve",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "trunk build",
-    "frontendDist": "dist"
+    "frontendDist": "../dist"
   },
   "app": {
     "withGlobalTauri": true,

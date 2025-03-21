@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use chrono::Datelike;
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
@@ -32,8 +35,8 @@ fn initial_tasks() -> Vec<Task> {
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
     let tasks = use_state(initial_tasks);
-    let from_date_ref: UseRef<Option<NaiveDateTime>> = use_ref(|| None);
-    let tasks_ref = use_ref(|| tasks.clone());
+    let from_date_ref = use_state(|| Rc::new(RefCell::new(None)));
+    let tasks_ref = use_state(|| tasks.clone());
 
     // マウスダウン時に開始位置を記録
     let on_mouse_down = {
@@ -47,8 +50,8 @@ pub fn gantt_chart() -> Html {
     // マウス移動時にタスクを移動
     let on_mouse_move = {
         let from_date_ref = from_date_ref.clone();
-        let tasks = tasks.clone();
-        Callback::from(move |e: MouseEvent| {
+        let tasks = tasks_ref.clone();
+        Callback::from(move |e: MouseEvent| { // type annotation added
             if let Some(from_date) = *from_date_ref.borrow() {
                 let diff_days = (e.movement_x() as i64) / 10; // 1px = 0.1日として仮定
                 let new_tasks = tasks.iter().map(|task| {

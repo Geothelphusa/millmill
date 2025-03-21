@@ -8,6 +8,9 @@ use web_sys::MouseEvent;
 
 
 use crate::styles::*;
+use crate::components::*;
+use crate::route::*;
+use yew_router::BrowserRouter;
 
 #[wasm_bindgen]
 extern "C" {
@@ -22,6 +25,17 @@ struct GreetArgs<'a> {
 
 #[styled_component(App)]
 pub fn app() -> Html {
+    let stylesheet = responsive_styles();
+
+    let is_menu_opened = use_state(|| false);
+
+    let onclick = {
+        let is_menu_opened_clone = is_menu_opened.clone();
+        Callback::from(move |_| is_menu_opened_clone.set(!*is_menu_opened_clone))
+    };
+
+    let onclick_clone = onclick.clone();
+
     let greet_input_ref = use_node_ref();
 
     let name = use_state(|| String::new());
@@ -84,7 +98,7 @@ pub fn app() -> Html {
                 <button type="submit">{"Greet"}</button>
             </form>
             <p>{ &*greet_msg }</p>
-            <HashRouter>
+            <BrowserRouter>
                     <nav class={classes!(nav_styles())}>
                         <MenuButton onclick={onclick_clone} is_opened={*is_menu_opened} />
                     </nav>
@@ -112,7 +126,7 @@ pub fn app() -> Html {
                         }}
                     </ul>
                     <Switch<Route> render={switch} />
-                </HashRouter>
+                </BrowserRouter>
             </div>
         </main>
     }

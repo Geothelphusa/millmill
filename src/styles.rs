@@ -248,3 +248,32 @@ pub fn menu_button_style() -> Style {
   ))
   .unwrap()
 }
+
+pub fn nav_styles() -> Style {
+  Style::new(css!(
+      r#"
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100px; /* 画面上端まで拡張 */
+          background: #2f2f2f;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 20px;
+          z-index: 100;
+      "#
+  )).unwrap()
+}
+
+pub fn menu_items() -> Style {
+  Style::new(css!(
+      r#"
+          display: block;
+          text-decoration: none;
+          color: black;
+          margin-right: 35px;
+      "#
+  )).unwrap()
+}

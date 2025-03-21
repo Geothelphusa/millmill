@@ -96,32 +96,38 @@ pub fn gantt_chart() -> Html {
             });
     }
 
-    let tasks_clone = (*tasks).clone(); // ここで明示的にクローンする
+    let tasks_clone = tasks.to_vec(); // Vec<Task> をクローン
 
     html! {
         <>
-            <h2>{ "ガントチャート" }</h2>
-            <div style="display: grid; grid-template-columns: repeat(30, 30px); grid-template-rows: repeat(5, 40px); gap: 2px; background: #eee; padding: 10px; border-radius: 5px;">
-                { for tasks.iter().enumerate().map(|(i, task)| html! {
-                    let task_clone = task.clone();
-                    <div 
-                        style={format!(
-                            "grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {}; color: white; text-align: center; padding: 5px; cursor: pointer;",
-                            task.start_date.day(), 
-                            task.end_date.day() + 1, 
-                            i + 1,
-                            task.color
-                        )}
-                        onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e.clone(), task_clone.clone()))}
-                    >
-                        { task.name }
-                    </div>
-                })}
+            <div>
+                <h2>{ "ガントチャート" }</h2>
+                <div style="display: grid; grid-template-columns: repeat(30, 30px); grid-template-rows: repeat(5, 40px); gap: 2px; background: #eee; padding: 10px; border-radius: 5px;">
+                    {
+                        let tasks_clone = tasks.to_vec() as Vec<Task>; // ここでクローンを作成
+    
+                        tasks_clone.iter().enumerate().map(|(i, task)| {
+                            let task_clone = task.clone();
+                            html! {
+                                <div 
+                                    style={format!(
+                                        "grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {}; color: white; text-align: center; padding: 5px; cursor: pointer;",
+                                        task.start_date.day(), 
+                                        task.end_date.day() + 1, 
+                                        i + 1,
+                                        task.color
+                                    )}
+                                    onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e.clone(), task_clone.clone()))}
+                                >
+                                    { task.name }
+                                </div>
+                            }
+                        }).collect::<Vec<_>>() // ここで Vec<Html> に変換
+                    }
+                </div>
             </div>
         </>
     }
     
-
-
-
+    
 }

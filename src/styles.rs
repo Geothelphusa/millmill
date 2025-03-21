@@ -144,3 +144,107 @@ button {
   ))
   .unwrap()
 }
+
+pub fn overlay_style() -> Style {
+  Style::new(css!(
+  r#"
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.8); /* 透明度を少し暗めに */
+        display: flex;
+        flex-direction: column;
+        justify-content: center; /* 中央配置 */
+        align-items: center; /* 中央配置 */
+        z-index: 200; /* nav より前面に */
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.3s ease, visibility 0.3s ease;
+
+        &.is-opened {
+            opacity: 1;
+            visibility: visible;
+        }
+  "#
+))
+.unwrap()
+}
+
+pub fn menu_style() -> Style {
+  Style::new(css!(
+  r#"
+        background: white;
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        display: flex;
+        flex-direction: column;
+        row-gap: 20px;
+        align-items: center;
+        width: 80%;
+        max-width: 400px;
+        text-align: center;
+        z-index: 201;
+
+  "#
+))
+.unwrap()
+}
+
+
+pub fn menu_list_style() -> Style {
+  Style::new(css!(
+      r#"
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      row-gap: 15px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #333;
+      "#
+  ))
+  .unwrap()
+}
+
+pub fn menu_button_style() -> Style {
+  Style::new(css!(
+      r#"
+      height: 45px;
+      width: 45px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      row-gap: 6px;
+
+      &__line,
+      &::before,
+      &::after {
+          content: "";
+          width: 28px;
+          height: 2px;
+          background-color: #333333;
+          transition: transform 0.3s, opacity 0.3s;
+      }
+
+      &.is-opened &__line {
+          opacity: 0;
+      }
+
+      &.is-opened::before {
+          transform: translateY(8px) rotate(45deg);
+      }
+
+      &.is-opened::after {
+          transform: translateY(-8px) rotate(-45deg);
+      }
+      "#
+  ))
+  .unwrap()
+}

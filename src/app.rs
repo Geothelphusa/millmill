@@ -3,6 +3,9 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen_futures::spawn_local;
 use yew::prelude::*;
 use stylist::yew::styled_component;
+use yew_router::prelude::*;
+use web_sys::MouseEvent;
+
 
 use crate::styles::*;
 
@@ -81,6 +84,35 @@ pub fn app() -> Html {
                 <button type="submit">{"Greet"}</button>
             </form>
             <p>{ &*greet_msg }</p>
+            <HashRouter>
+                    <nav class={classes!(nav_styles())}>
+                        <MenuButton onclick={onclick_clone} is_opened={*is_menu_opened} />
+                    </nav>
+                    <ul class={css!("display: flex; flex-direction: column; @media (min-width: 768px) {flex-direction: row;}")}>
+                        { if *is_menu_opened {
+                            html! {
+                                <div class={classes!(overlay_style(), "is-opened")} onclick={onclick.clone()}>
+                                    <div class={classes!(menu_style())} onclick={Callback::from(|e: MouseEvent| e.stop_propagation())}>
+                                        <ul class={classes!(menu_list_style())}>
+                                            { for vec![
+                                                (Route::Home, "HOME"),
+                                                (Route::About, "ABOUT"),
+                                                (Route::Service, "SERVICE"),
+                                                (Route::News, "NEWS"),
+                                                (Route::Blog, "BLOG"),
+                                            ].into_iter().map(|(route, label)| html! {
+                                                <li><Link<Route> to={route} classes={classes!(menu_items())}>{ label }</Link<Route>></li>
+                                            }) }
+                                        </ul>
+                                    </div>
+                                </div>
+                            }
+                        } else {
+                            html! {}
+                        }}
+                    </ul>
+                    <Switch<Route> render={switch} />
+                </HashRouter>
             </div>
         </main>
     }

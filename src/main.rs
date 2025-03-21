@@ -3,8 +3,6 @@ mod styles;
 mod route;
 mod components;
 
-
-
 use app::App;
 
 fn main() {

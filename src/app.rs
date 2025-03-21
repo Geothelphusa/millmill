@@ -68,6 +68,7 @@ pub fn app() -> Html {
                                                 (Route::Service, "SERVICE"),
                                                 (Route::News, "NEWS"),
                                                 (Route::Blog, "BLOG"),
+                                                (Route::GanttChart, "GanttChart"),
                                             ].into_iter().map(|(route, label)| html! {
                                                 <li><Link<Route> to={route} classes={classes!(menu_items())}>{ label }</Link<Route>></li>
                                             }) }

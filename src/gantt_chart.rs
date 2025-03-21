@@ -43,19 +43,19 @@ pub fn gantt_chart() -> Html {
     let on_mouse_down = {
         let from_date_ref = from_date_ref.clone();
         Callback::from(move |(e, task): (MouseEvent, Task)| {
-            e.prevent_default();
+            e.prevent_default(); // Prevent text selection
             from_date_ref.borrow_mut().replace(task.start_date);
         })
-    };
+    };    
 
     // マウス移動時にタスクを移動
     let on_mouse_move = {
         let from_date_ref = from_date_ref.clone();
-        let tasks = tasks_ref.clone();
-        Callback::from(move |e: MouseEvent| { // type annotation added
+        let tasks_clone = tasks_ref.clone(); // tasks_refをclone
+        Callback::from(move |e: MouseEvent| {
             if let Some(from_date) = *from_date_ref.borrow() {
-                let diff_days = (e.movement_x() as i64) / 10; // 1px = 0.1日として仮定
-                let new_tasks: Vec<Task> = tasks.iter().map(|task| {
+                let diff_days = (e.movement_x() as i64) / 10;
+                let new_tasks: Vec<Task> = tasks_clone.iter().map(|task| {
                     Task {
                         start_date: task.start_date + Duration::days(diff_days),
                         end_date: task.end_date + Duration::days(diff_days),
@@ -76,19 +76,20 @@ pub fn gantt_chart() -> Html {
     };
 
     // グローバルイベントリスナーを登録
-    use_effect_with(
-        move |_| {
-            let move_listener = EventListener::new(&gloo::utils::window(), "mousemove", move |e| {
-                on_mouse_move.emit(e.clone().dyn_into().unwrap());
+    {
+        let on_mouse_move = on_mouse_move.clone();
+        let on_mouse_up = on_mouse_up.clone();
+        use_effect_with((), move |_| {
+                let move_listener = EventListener::new(&gloo::utils::window(), "mousemove", move |e: &web_sys::Event| {
+                    on_mouse_move.emit(e.clone().dyn_into::<web_sys::MouseEvent>().unwrap());
+                });
+                let up_listener = EventListener::new(&gloo::utils::window(), "mouseup", move |e: &web_sys::Event| {
+                    on_mouse_up.emit(e.clone().dyn_into().unwrap());
+                });
+        
+                move || drop((move_listener, up_listener))
             });
-            let up_listener = EventListener::new(&gloo::utils::window(), "mouseup", move |e| {
-                on_mouse_up.emit(e.clone().dyn_into().unwrap());
-            });
-    
-            || drop((move_listener, up_listener))
-        },
-        (), // 依存関係配列を空にする
-    );
+    }
 
     html! {
         <div>

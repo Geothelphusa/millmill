@@ -277,3 +277,81 @@ pub fn menu_items() -> Style {
       "#
   )).unwrap()
 }
+
+pub fn light_mode_styles() -> Style {
+  Style::new(css!(
+      r#"
+          color: #0f0f0f;
+          background-color: #f6f6f6;
+          position: fixed;
+          width: 100vw;
+          height: 100vh;
+      "#
+  ))
+  .unwrap()
+}
+
+pub fn dark_mode_styles() -> Style {
+  Style::new(css!(
+      r#"
+          color: #f6f6f6;
+          background-color: #2f2f2f;
+          position: fixed;
+          width: 100vw;
+          height: 100vh;
+      "#
+  ))
+  .unwrap()
+}
+
+pub fn toggle_button() -> Style {
+  Style::new(css!(
+      r#"   
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            z-index: 150;
+            
+            display: flex;
+            width: 56px;
+            height: 28px;
+            border: 1px solid #555555;
+            border-radius: 9999px;
+            background-color: #dddddd;
+            cursor: pointer;
+
+          :has(:focus-visible) {
+            outline: auto;
+            outline: auto -webkit-focus-ring-color;
+          }
+
+      "#
+  )).unwrap()
+}
+
+pub fn toggle_slider() -> Style {
+  Style::new(css!(
+      r#"
+          
+            appearance: none;
+            position: absolute;
+            top: 10px;
+            left: 0px;
+            width: 28px;
+            height: 28px;
+            border: 1px solid #555555;
+            border-radius: 9999px;
+            transform: translateY(-40%);
+            outline: none;
+            background-color: #ffffff;
+            transition: left 0.2s;
+            cursor: pointer;
+          
+
+          :checked {
+            left: calc(100% - 32px);
+            background-color: #2f2f2f;
+          }
+      "#
+  )).unwrap()
+}

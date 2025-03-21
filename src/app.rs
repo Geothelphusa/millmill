@@ -25,7 +25,6 @@ struct GreetArgs<'a> {
 
 #[styled_component(App)]
 pub fn app() -> Html {
-    let stylesheet = responsive_styles();
 
     let is_menu_opened = use_state(|| false);
 
@@ -78,8 +77,30 @@ pub fn app() -> Html {
         })
     };
 
+    // Brightness mode handling (init:dark)
+    let dark_mode = use_state(|| true);
+    let dark_mode_clone = dark_mode.clone();
+
+    let mut main_classes = Classes::new();
+    main_classes.push(app_styles());
+    if *dark_mode {
+        main_classes.push(dark_mode_styles());
+    } else {
+        main_classes.push(light_mode_styles());
+    };
+
     html! {
-        <main class={classes!(app_styles(), responsive_styles())}>
+        <main>
+        // Brightness mode switch
+        <label class={classes!(toggle_button())}>
+        <input 
+            type="checkbox" 
+            class={classes!(toggle_slider())}
+            oninput={Callback::from(move |_| dark_mode_clone.set(!*dark_mode_clone))}
+            checked={*dark_mode}
+        />  
+    </label>
+        <div class={classes!(app_styles(), responsive_styles())}>
             <div class="container">
             <h1>{"Welcome to Tauri + Yew"}</h1>
 
@@ -128,6 +149,8 @@ pub fn app() -> Html {
                     <Switch<Route> render={switch} />
                 </BrowserRouter>
             </div>
+            
+        </div>
         </main>
     }
 }

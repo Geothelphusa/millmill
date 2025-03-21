@@ -34,6 +34,7 @@ fn initial_tasks() -> Vec<Task> {
 
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
+    
     let tasks = use_state(initial_tasks);
     let from_date_ref = use_state(|| Rc::new(RefCell::new(None)));
     let tasks_ref = use_state(|| tasks.clone());
@@ -54,7 +55,7 @@ pub fn gantt_chart() -> Html {
         Callback::from(move |e: MouseEvent| { // type annotation added
             if let Some(from_date) = *from_date_ref.borrow() {
                 let diff_days = (e.movement_x() as i64) / 10; // 1px = 0.1日として仮定
-                let new_tasks = tasks.iter().map(|task| {
+                let new_tasks: Vec<Task> = tasks.iter().map(|task| {
                     Task {
                         start_date: task.start_date + Duration::days(diff_days),
                         end_date: task.end_date + Duration::days(diff_days),
@@ -75,7 +76,7 @@ pub fn gantt_chart() -> Html {
     };
 
     // グローバルイベントリスナーを登録
-    use_effect_with;(
+    use_effect_with(
         move |_| {
             let move_listener = EventListener::new(&gloo::utils::window(), "mousemove", move |e| {
                 on_mouse_move.emit(e.clone().dyn_into().unwrap());
@@ -86,7 +87,7 @@ pub fn gantt_chart() -> Html {
     
             || drop((move_listener, up_listener))
         },
-        (), // 依存関係が空の場合は `()` を渡す
+        (), // 依存関係配列を空にする
     );
 
     html! {

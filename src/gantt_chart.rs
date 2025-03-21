@@ -43,19 +43,19 @@ pub fn gantt_chart() -> Html {
     let on_mouse_down = {
         let from_date_ref = from_date_ref.clone();
         Callback::from(move |(e, task): (MouseEvent, Task)| {
-            e.prevent_default(); // Prevent text selection
-            from_date_ref.borrow_mut().replace(task.start_date);
+            e.prevent_default();
+            from_date_ref.set(Rc::new(RefCell::new(Some(task.start_date))));
         })
-    };    
-
-    // マウス移動時にタスクを移動
+    };
+    
     let on_mouse_move = {
         let from_date_ref = from_date_ref.clone();
-        let tasks_clone = tasks_ref.clone(); // tasks_refをclone
+        let tasks_clone = tasks_ref.clone();
         Callback::from(move |e: MouseEvent| {
-            if let Some(from_date) = *from_date_ref.borrow() {
+            if let Some(from_date) = *from_date_ref.clone().borrow() {
                 let diff_days = (e.movement_x() as i64) / 10;
-                let new_tasks: Vec<Task> = tasks_clone.iter().map(|task| {
+                let current_tasks = (*tasks_clone).clone(); // ✅ 修正
+                let new_tasks: Vec<Task> = current_tasks.iter().map(|task| {
                     Task {
                         start_date: task.start_date + Duration::days(diff_days),
                         end_date: task.end_date + Duration::days(diff_days),
@@ -66,6 +66,7 @@ pub fn gantt_chart() -> Html {
             }
         })
     };
+    
 
     // マウスアップ時にリセット
     let on_mouse_up = {
@@ -81,21 +82,28 @@ pub fn gantt_chart() -> Html {
         let on_mouse_up = on_mouse_up.clone();
         use_effect_with((), move |_| {
                 let move_listener = EventListener::new(&gloo::utils::window(), "mousemove", move |e: &web_sys::Event| {
-                    on_mouse_move.emit(e.clone().dyn_into::<web_sys::MouseEvent>().unwrap());
+                    if let Ok(mouse_event) = e.clone().dyn_into::<web_sys::MouseEvent>() {
+                        on_mouse_move.emit(mouse_event);
+                    }
                 });
                 let up_listener = EventListener::new(&gloo::utils::window(), "mouseup", move |e: &web_sys::Event| {
-                    on_mouse_up.emit(e.clone().dyn_into().unwrap());
+                    if let Ok(mouse_event) = e.clone().dyn_into::<web_sys::MouseEvent>() {
+                        on_mouse_up.emit(mouse_event);
+                    }
                 });
         
                 move || drop((move_listener, up_listener))
             });
     }
 
+    let tasks_clone = (*tasks).clone(); // ここで明示的にクローンする
+
     html! {
-        <div>
+        <>
             <h2>{ "ガントチャート" }</h2>
             <div style="display: grid; grid-template-columns: repeat(30, 30px); grid-template-rows: repeat(5, 40px); gap: 2px; background: #eee; padding: 10px; border-radius: 5px;">
                 { for tasks.iter().enumerate().map(|(i, task)| html! {
+                    let task_clone = task.clone();
                     <div 
                         style={format!(
                             "grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {}; color: white; text-align: center; padding: 5px; cursor: pointer;",
@@ -104,12 +112,16 @@ pub fn gantt_chart() -> Html {
                             i + 1,
                             task.color
                         )}
-                        onmousedown={on_mouse_down.reform(move |e| (e.clone(), task.clone()))}
+                        onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e.clone(), task_clone.clone()))}
                     >
                         { task.name }
                     </div>
                 })}
             </div>
-        </div>
+        </>
     }
+    
+
+
+
 }

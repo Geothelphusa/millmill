@@ -56,11 +56,14 @@ pub fn gantt_chart() -> Html {
         let dragging_task_id = dragging_task_id.clone();
         let tasks = tasks.clone();
         Callback::from(move |e: MouseEvent| {
-            let from_date_rc = from_date_ref.borrow().clone();
-            let dragging_id_rc = dragging_task_id.borrow().clone();
-            let dragging_id_option = (*dragging_id_rc.borrow()).clone(); // 追加箇所
-            if let Some(from_date) = (*from_date_rc.borrow()).clone() {
-                if let Some(dragging_id) = dragging_id_option { // 修正箇所
+            let from_date_rc = &**from_date_ref; // Rc<RefCell<Option<NaiveDateTime>>> にアクセス
+            let dragging_id_rc = &**dragging_task_id; // Rc<RefCell<Option<usize>>> にアクセス
+    
+            let from_date_option = from_date_rc.borrow(); // Ref<Option<NaiveDateTime>>
+            let dragging_id_option = dragging_id_rc.borrow(); // Ref<Option<usize>>
+    
+            if let Some(_from_date) = from_date_option.as_ref().copied() { // Option<NaiveDateTime> に変換
+                if let Some(dragging_id) = dragging_id_option.as_ref().copied() { // Option<usize> に変換
                     let diff_days = (e.movement_x() as i64) / 30; // Adjust sensitivity here
                     let current_tasks = (*tasks).clone();
                     let new_tasks: Vec<Task> = current_tasks.iter().map(|task| {

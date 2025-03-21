@@ -1,6 +1,9 @@
+use stylist::yew::styled_component;
 use yew::prelude::*;
-use wasm_bindgen::JsCast;
 use stylist::style;
+
+use crate::components::*;
+use crate::styles::*;
 
 #[derive(Clone, PartialEq)]
 struct Task {
@@ -10,8 +13,11 @@ struct Task {
     color: &'static str, // 背景色
 }
 
-#[function_component(GanttChart)]
+#[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
+
+    // GanttChart
+    let new_task = Vec::<Task>::new();
     let tasks = vec![
         Task { name: "", start: 0, duration: 5, color: "#333" },
         Task { name: "", start: 6, duration: 3, color: "#333" },
@@ -34,14 +40,14 @@ pub fn gantt_chart() -> Html {
         <div>
             <h2>{"GanttChart"}</h2>
             <div class={grid_style}>
-                { for (0..5).map(|_row| html! {
+                { for (0..30).map(|_row| html! {
                     { for (0..30).map(|_col| html! {
                         <div style="width: 30px; height: 40px; background: white; border: 1px solid #ddd;"></div>
                     }) }
                 }) }
                 
                 { for tasks.iter().enumerate().map(|(i, task)| html! {
-                    <div 
+                    <div onclick={Callback::from(|e: MouseEvent| e.prevent_default())}
                         style={format!(
                             "grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {}; color: white; text-align: center; padding: 5px;",
                             task.start + 1,

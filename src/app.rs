@@ -17,7 +17,7 @@ extern "C" {
 
 #[styled_component(App)]
 pub fn app() -> Html {
-
+    // Menu handling
     let is_menu_opened = use_state(|| false);
 
     let onclick = {

@@ -134,7 +134,7 @@ pub fn gantt_chart() -> Html {
             <div>
                 <h2>{ "ガントチャート" }</h2>
                 <div class={grid_style}>
-                    { for (0..5).map(|_row| html! { 
+                    { for (0..30).map(|_row| html! { 
                             { for (0..30).map(|_col| html! {
                                 <div style="width: 30px; height: 40px; background: white; border: 1px solid #ddd;"></div>
 

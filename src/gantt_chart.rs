@@ -1,6 +1,7 @@
+use wasm_bindgen::prelude::Closure;
 use yew::prelude::*;
 use yew_hooks::prelude::*;
-use web_sys::{Element, MouseEvent};
+use web_sys::{Element, MouseEvent, Event};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -25,12 +26,23 @@ struct RowHeader {
 
 fn use_get_row_headers() -> UseStateHandle<Vec<RowHeader>> {
     // 実際の行ヘッダデータを取得するロジックを実装
-    use_state(|| vec![])
+    use_state(|| vec![RowHeader { id: "Row1".to_string() }, RowHeader { id: "Row2".to_string() }])
 }
 
 fn use_get_db_tasks() -> Vec<Task> {
     // 実際のDBからタスクデータを取得するロジックを実装
-    vec![]
+    vec![
+        Task {
+            task_id: "Task1".to_string(),
+            start_date: NaiveDate::from_ymd_opt(2024, 3, 10).unwrap(),
+            end_date: NaiveDate::from_ymd_opt(2024, 3, 20).unwrap(),
+        },
+        Task {
+            task_id: "Task2".to_string(),
+            start_date: NaiveDate::from_ymd_opt(2024, 4, 1).unwrap(),
+            end_date: NaiveDate::from_ymd_opt(2024, 4, 15).unwrap(),
+        },
+    ]
 }
 
 fn compute_map(
@@ -40,20 +52,50 @@ fn compute_map(
     row_headers: Vec<RowHeader>,
 ) -> (HashMap<String, (i32, i32)>, HashMap<String, i32>) {
     // タスクと行ヘッダの位置を計算するロジックを実装
-    (HashMap::new(), HashMap::new())
+    let mut tasks_position_map = HashMap::new();
+    let mut row_header_position_map = HashMap::new();
+
+    for (row_index, row_header) in row_headers.iter().enumerate() {
+        row_header_position_map.insert(row_header.id.clone(), row_index as i32);
+    }
+
+    for task in tasks.iter() {
+        if let Some(row_index) = row_headers.iter().position(|r| r.id == "Row1") {
+            tasks_position_map.insert(task.task_id.clone(), (0, row_index as i32));
+        } else if let Some(row_index) = row_headers.iter().position(|r| r.id == "Row2") {
+            tasks_position_map.insert(task.task_id.clone(), (0, row_index as i32));
+        }
+    }
+
+    (tasks_position_map, row_header_position_map)
 }
 
 fn get_tasks_by_row_header(tasks: Vec<Task>, row_headers: Vec<RowHeader>) -> HashMap<String, Vec<Task>> {
     // 行ヘッダごとにタスクを分割するロジックを実装
-    HashMap::new()
+    let mut tasks_by_row_header = HashMap::new();
+    for row_header in row_headers.iter() {
+        tasks_by_row_header.insert(row_header.id.clone(), Vec::new());
+    }
+
+    for task in tasks.iter() {
+        if let Some(row_header_id) = row_headers.iter().find(|r| r.id == "Row1").map(|r| r.id.clone()) {
+            tasks_by_row_header.get_mut(&row_header_id).unwrap().push(task.clone());
+        } else if let Some(row_header_id) = row_headers.iter().find(|r| r.id == "Row2").map(|r| r.id.clone()) {
+            tasks_by_row_header.get_mut(&row_header_id).unwrap().push(task.clone());
+        }
+    }
+
+    tasks_by_row_header
 }
 
 fn update_task_temporary(task: Task) {
     // タスクの一時的な更新ロジックを実装
+    println!("Temporary update: {:?}", task);
 }
 
-fn update_task(task: Vec<Task>) {
+fn update_task(tasks: Vec<Task>) {
     // タスクの永続的な更新ロジックを実装
+    println!("Update: {:?}", tasks);
 }
 
 const ONE_DAY_WIDTH: i32 = 20;
@@ -72,14 +114,12 @@ fn gantt_chart() -> Html {
     let local_tasks = use_state(|| db_tasks);
     let drawing_tasks = use_state(|| (*local_tasks).clone());
 
-    {
-        let local_tasks = local_tasks.clone();
-        let drawing_tasks = drawing_tasks.clone();
-        use_effect_with_deps(move |_| {
-            drawing_tasks.set((*local_tasks).clone());
-            || ()
-        }, local_tasks);
-    }
+    let local_tasks_clone = (*local_tasks).clone();
+    let drawing_tasks_clone = drawing_tasks.clone();
+    use_effect_with(local_tasks_clone, move |local_tasks_clone| {
+        drawing_tasks_clone.set(local_tasks_clone.clone());
+        || ()
+    });
 
     let (tasks_position_map, row_header_position_map) = {
         let local_tasks = (*local_tasks).clone();
@@ -107,7 +147,7 @@ fn gantt_chart() -> Html {
                 element.scroll_to_with_scroll_to_options(web_sys::ScrollToOptions::new().top(element.scroll_top() as f64).left(left as f64).behavior(web_sys::ScrollBehavior::Smooth));
                 true
             } else {
-                false
+                false 
             }
         }, ())
     };
@@ -125,7 +165,7 @@ fn gantt_chart() -> Html {
     {
         let watch_element_ref = watch_element_ref.clone();
         let on_scroll = on_scroll.clone();
-        use_effect_with_deps(move |_| {
+        use_effect_with(watch_element_ref.clone(), move |watch_element_ref| {
             if let Some(element) = watch_element_ref.cast::<Element>() {
                 let on_scroll_clone = on_scroll.clone();
                 let closure = Closure::wrap(Box::new(move || on_scroll_clone()));
@@ -139,7 +179,7 @@ fn gantt_chart() -> Html {
             } else {
                 || ()
             }
-        }, watch_element_ref);
+        });
     }
 
     let visible_range = {
@@ -209,23 +249,37 @@ fn gantt_chart() -> Html {
               let on_mouse_move = {
                   let events_ref = events_ref.clone();
                   use_throttle(move |e: MouseEvent| {
-                      let events = events_ref.borrow();
-                      (events.on_mouse_move)((task.clone(), get_now_date(e)));
+                      let events = events_ref.borrow().clone();
+                      (events.on_mouse_move.clone())((task.clone(), get_now_date(e)), ());
                   }, 50)
               };
 
               let on_mouse_up = {
                   let events_ref = events_ref.clone();
-                  use_callback(move |e: MouseEvent, _| {
-                      let events = events_ref.borrow();
-                      (events.on_mouse_move_end)(task.task_id.clone());
-                      // イベントリスナーの削除
-                      // ...
-                  }, ())
+                  let on_mouse_move = on_mouse_move.clone();
+                  use_callback(move |_: Event, _| {
+                      let events = events_ref.borrow().clone();
+                      (events.on_mouse_move_end.clone())(task.task_id.clone(), ());
+                      let window = window();
+                      let document = window.document().unwrap();
+                      let on_mouse_move_closure = Closure::wrap(Box::new(move |e: MouseEvent| {
+                          on_mouse_move(e);
+                      }) as Box<dyn FnMut(_)>);
+                      document.remove_event_listener_with_callback("mousemove", on_mouse_move_closure.as_ref().unchecked_ref()).unwrap();
+                      let on_mouse_up_closure = Closure::wrap(Box::new(move |e: Event| {
+                      }) as Box<dyn FnMut(_)>).into_js_value();
+                      document.remove_event_listener_with_callback("mouseup", on_mouse_up_closure.as_ref().unchecked_ref()).unwrap();
+                  }, on_mouse_move)
               };
 
-              // イベントリスナーの追加
-              // ...
+              let window = window();
+              let document = window.document().unwrap();
+              let on_mouse_move_closure = Closure::wrap(Box::new(move |e: MouseEvent| {
+                  on_mouse_move(e);
+              }) as Box<dyn FnMut(_)>);
+              document.add_event_listener_with_callback("mousemove", on_mouse_move_closure.as_ref().unchecked_into()).unwrap();
+              let on_mouse_up_closure = Closure::once(Box::new(move |e: Event| on_mouse_up(e, ())) as Box<dyn FnOnce(_)>);
+              document.add_event_listener_with_callback("mouseup", on_mouse_up_closure.as_ref().unchecked_ref().unchecked_ref()).unwrap();
               (events_ref.borrow().on_mouse_move_start)(get_now_date(e));
           }
       }, ())
@@ -271,18 +325,25 @@ html! {
                                 if let Some(style) = style {
                                     html! {
                                         <div style={style} onmousedown={on_mouse_down_to_slide_task.reform(move |e: MouseEvent| (e, task.clone()))}>
-                                            {task.task_id.clone()} // タスクの表示
-                                        </div>
-                                    }
-                                } else {
-                                    html! {}
+                                        {task.task_id.clone()} // タスクの表示
+                                    </div>
                                 }
-                            })
-                        }
-                    </div>
-                }
-            })
-        }
-    </div>
+                            } else {
+                                html! {}
+                            }
+                        })
+                    }
+                </div>
+            }
+        })
+    }
+</div>
 }
+}
+
+#[derive(Clone)]
+struct Events {
+on_mouse_move_start: Callback<NaiveDate>,
+on_mouse_move: Callback<(Task, NaiveDate)>,
+on_mouse_move_end: Callback<String>,
 }

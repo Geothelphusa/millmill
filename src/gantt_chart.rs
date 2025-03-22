@@ -35,6 +35,18 @@ fn initial_tasks() -> Vec<Task> {
 
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
+
+    let grid_style = style!(
+        "
+        display: grid;
+        grid-template-columns: repeat(30, 30px);
+        grid-template-rows: repeat(5, 40px);
+        gap: 2px;
+        background: #eee;
+        padding: 10px;
+        border-radius: 5px;
+        "
+    ).unwrap();
     
     let tasks = use_state(initial_tasks);
     let from_date_ref = use_state(|| Rc::new(RefCell::new(None)));
@@ -122,7 +134,12 @@ pub fn gantt_chart() -> Html {
         <>
             <div>
                 <h2>{ "ガントチャート" }</h2>
-                <div style="display: grid; grid-template-columns: repeat(30, 30px); grid-template-rows: repeat(5, 40px); gap: 2px; background: #eee; padding: 10px; border-radius: 5px;">
+                <div class={grid_style}>
+                    {{ for (0..5).map(|_row| html! {
+                        { for (0..30).map(|_col| html! {
+                            <div style="width: 30px; height: 40px; background: white; border: 1px solid #ddd;"></div>
+                        }) }
+                    }) } }
                     {
                         tasks_clone.iter().enumerate().map(|(i, task)| {
                             let task_clone = task.clone();
@@ -131,7 +148,7 @@ pub fn gantt_chart() -> Html {
                             let column_start = if start_day > 0 && start_day <= 30 { start_day } else { 1 };
                             let column_end = if end_day > 0 && end_day <= 30 { end_day + 1 } else { 31 };
                             html! {
-                                <div 
+                                <div
                                     style={format!(
                                         "grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {}; color: white; text-align: center; padding: 5px; cursor: pointer;",
                                         column_start,
@@ -140,6 +157,8 @@ pub fn gantt_chart() -> Html {
                                         task.color
                                     )}
                                     onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e.clone(), task_clone.clone()))}
+                                    onmousemove={on_mouse_move.clone()}
+                                    onmouseup={on_mouse_up.clone()}
                                 >
                                     { task.name }
                                 </div>

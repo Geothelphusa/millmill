@@ -3,6 +3,7 @@ mod styles;
 mod route;
 mod components;
 mod gantt_chart;
+mod home;
 
 use app::App;
 

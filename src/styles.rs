@@ -355,3 +355,21 @@ pub fn toggle_slider() -> Style {
       "#
   )).unwrap()
 }
+
+pub fn title_logo() -> Style {
+  Style::new(css!(
+      r#"
+          width: 500px;
+          height: 500px;
+          max-width: 100%;
+          max-height: 100%;
+
+          @media (max-width: 768px) { /* 768px以下（スマホなど）の場合 width/height は 3/4 にする */
+              width: 300px;
+              height: 300px;
+              max-width: 75%;
+              max-height: 100%;
+          }
+      "#
+  )).unwrap()
+}

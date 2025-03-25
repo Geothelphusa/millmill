@@ -52,7 +52,7 @@ pub fn app() -> Html {
     </label>
         <div class={classes!(main_classes, responsive_styles())}>
             <div class="container">
-            <BrowserRouter>
+                <BrowserRouter>
                     <nav class={classes!(nav_styles())}>
                         <MenuButton onclick={onclick_clone} is_opened={*is_menu_opened} />
                     </nav>
@@ -64,11 +64,10 @@ pub fn app() -> Html {
                                         <ul class={classes!(menu_list_style())}>
                                             { for vec![
                                                 (Route::Home, "HOME"),
-                                                (Route::About, "ABOUT"),
-                                                (Route::Service, "SERVICE"),
-                                                (Route::News, "NEWS"),
-                                                (Route::Blog, "BLOG"),
-                                                (Route::GanttChart, "GanttChart"),
+                                                (Route::NowInProduction, "Now In Production"),
+                                                (Route::ToolSetting, "Tool Setting"),
+                                                (Route::InstructionsCreation, "Instructions Creation"),
+                                                (Route::GanttChart, "Gantt Chart")
                                             ].into_iter().map(|(route, label)| html! {
                                                 <li><Link<Route> to={route} classes={classes!(menu_items())}>{ label }</Link<Route>></li>
                                             }) }

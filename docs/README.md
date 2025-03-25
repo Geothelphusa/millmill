@@ -1,10 +1,10 @@
 <div align="center">
   <a href="https://geothelphusa.github.io/" target="_blank"><img src="https://raw.githubusercontent.com/Geothelphusa/geothelphusa.github.io/refs/heads/main/static/Geothelphusa.jpeg" width="150" /></a>
 
-  <h1>Geothelphusa.github.io</h1>
+  <h1>millmill</h1>
 
   <p>
-    <strong>Geothelphusa organization website</strong>
+    <strong>Manufacturing process monitoring system</strong>
   </p>
 </div>
 
@@ -13,12 +13,8 @@
 
 ## Overview
 
-> Geothelphusa is a species of freshwater crab in Japanese.  
-  
-We exist to provide OSS as an option for manufacturing workers in the digital transformation of their workplaces.
-
 ## Contributing
-This website is opensource, issues and pull requests are always welcome!!!  
+This software is opensource, issues and pull requests are always welcome!!!  
 When contributing, please read [CONTRIBUTING](./CONTRIBUTING.md).
 
 

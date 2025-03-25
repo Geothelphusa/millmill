@@ -1,5 +1,5 @@
 ## About raising issues
-Raising issues is essential for the continued development of the site.  
+Raising issues is essential for the continued development of the software.  
 If you have an idea, please propose it via Issues at the top of the repository.
 
 ## About source code read/write permissions

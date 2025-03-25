@@ -22,6 +22,9 @@ console_error_panic_hook = "0.1.7"
 chrono = "0.4" # 日付計算用
 gloo-events = "0.2" # JavaScript イベント管理
 gloo ="0.11.0"
+gloo-utils = "0.2.0"
+gloo-timers = "0.3.0"
+yew-hooks = "0.3.3"
 
 [workspace]
 members = ["src-tauri"]

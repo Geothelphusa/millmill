@@ -1,6 +1,5 @@
 use std::cell::RefCell;
 use std::rc::Rc;
-use std::borrow::Borrow;
 
 use chrono::Datelike;
 use stylist::yew::styled_component;
@@ -35,6 +34,18 @@ fn initial_tasks() -> Vec<Task> {
 
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
+
+    let grid_style = style!(
+        "
+        display: grid;
+        grid-template-columns: repeat(30, 30px);
+        grid-template-rows: repeat(5, 40px);
+        gap: 2px;
+        background: #eee;
+        padding: 10px;
+        border-radius: 5px;
+        "
+    ).unwrap();
     
     let tasks = use_state(initial_tasks);
     let from_date_ref = use_state(|| Rc::new(RefCell::new(None)));
@@ -62,13 +73,13 @@ pub fn gantt_chart() -> Html {
             let from_date_option = from_date_rc.borrow(); // Ref<Option<NaiveDateTime>>
             let dragging_id_option = dragging_id_rc.borrow(); // Ref<Option<usize>>
     
-            if let Some(_from_date) = from_date_option.as_ref().copied() { // Option<NaiveDateTime> に変換
-                if let Some(dragging_id) = dragging_id_option.as_ref().copied() { // Option<usize> に変換
+            if let Some(_from_date) = *from_date_option { // Option<NaiveDateTime> に変換
+                if let Some(dragging_id) = *dragging_id_option { // Option<usize> に変換
                     let diff_days = (e.movement_x() as i64) / 30; // Adjust sensitivity here
                     let current_tasks = (*tasks).clone();
                     let new_tasks: Vec<Task> = current_tasks.iter().map(|task| {
                         if task.id == dragging_id {
-                            let new_start_date = task.start_date + Duration::days(diff_days);
+                            let new_start_date = task.start_date + Duration::days(diff_days); 
                             let new_end_date = task.end_date + Duration::days(diff_days);
                             Task {
                                 start_date: new_start_date,
@@ -122,30 +133,39 @@ pub fn gantt_chart() -> Html {
         <>
             <div>
                 <h2>{ "ガントチャート" }</h2>
-                <div style="display: grid; grid-template-columns: repeat(30, 30px); grid-template-rows: repeat(5, 40px); gap: 2px; background: #eee; padding: 10px; border-radius: 5px;">
+                <div class={grid_style}>
+                    { for (0..30).map(|_row| html! { 
+                            { for (0..30).map(|_col| html! {
+                                <div style="width: 30px; height: 40px; background: white; border: 1px solid #ddd;"></div>
+
+                            }) }
+                    }) }
                     {
                         tasks_clone.iter().enumerate().map(|(i, task)| {
                             let task_clone = task.clone();
+                            let row_index = i + 1;
                             let start_day = task.start_date.day();
                             let end_day = task.end_date.day();
                             let column_start = if start_day > 0 && start_day <= 30 { start_day } else { 1 };
                             let column_end = if end_day > 0 && end_day <= 30 { end_day + 1 } else { 31 };
                             html! {
-                                <div 
+                                <div
                                     style={format!(
                                         "grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {}; color: white; text-align: center; padding: 5px; cursor: pointer;",
                                         column_start,
                                         column_end,
-                                        i + 1,
+                                        row_index,
                                         task.color
                                     )}
-                                    onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e.clone(), task_clone.clone()))}
-                                >
+                                    onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e, task_clone.clone()))}
+                                    onmousemove={on_mouse_move.clone()}
+                                    onmouseup={on_mouse_up.clone()}
+                                > 
                                     { task.name }
-                                </div>
+                                </div> 
                             }
-                        }).collect::<Vec<_>>()
-                    }
+                        }).collect::<Html>()}
+                    
                 </div>
             </div>
         </>

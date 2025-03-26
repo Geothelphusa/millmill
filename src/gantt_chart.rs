@@ -7,9 +7,6 @@ use wasm_bindgen::JsCast;
 use yew::prelude::*;
 use stylist::style;
 
-use crate::components::*;
-use crate::styles::*;
-
 use chrono::{NaiveDateTime, Duration};
 use gloo_events::EventListener;
 
@@ -22,7 +19,6 @@ struct Task {
     color: &'static str,
 }
 
-// タスクの初期状態
 fn initial_tasks() -> Vec<Task> {
     let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
     vec![
@@ -34,24 +30,52 @@ fn initial_tasks() -> Vec<Task> {
 
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
-
     let grid_style = style!(
-        "
+        r#"
         display: grid;
-        grid-template-columns: repeat(30, 30px);
-        grid-template-rows: repeat(5, 40px);
-        gap: 2px;
-        background: #eee;
-        padding: 10px;
+        grid-template-columns: repeat(30, 50px);
+        grid-template-rows: repeat(5, 60px);
+        gap: 4px;
+        background: #f0f0f0;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        "#
+    )
+    .unwrap();
+
+    let cell_style = style!(
+        r#"
+        width: 50px;
+        height: 60px;
+        background: white;
+        border: 1px solid #ddd;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        "#
+    )
+    .unwrap();
+
+    let task_style = style!(
+        r#"
+        color: white;
+        text-align: center;
+        padding: 8px;
+        cursor: pointer;
         border-radius: 5px;
-        "
-    ).unwrap();
-    
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        "#
+    )
+    .unwrap();
+
     let tasks = use_state(initial_tasks);
     let from_date_ref = use_state(|| Rc::new(RefCell::new(None)));
     let dragging_task_id = use_state(|| Rc::new(RefCell::new(None)));
 
-    // マウスダウン時に開始位置を記録
     let on_mouse_down = {
         let from_date_ref = from_date_ref.clone();
         let dragging_task_id = dragging_task_id.clone();
@@ -61,43 +85,44 @@ pub fn gantt_chart() -> Html {
             dragging_task_id.set(Rc::new(RefCell::new(Some(task.id))));
         })
     };
-    
+
     let on_mouse_move = {
         let from_date_ref = from_date_ref.clone();
         let dragging_task_id = dragging_task_id.clone();
         let tasks = tasks.clone();
         Callback::from(move |e: MouseEvent| {
-            let from_date_rc = &**from_date_ref; // Rc<RefCell<Option<NaiveDateTime>>> にアクセス
-            let dragging_id_rc = &**dragging_task_id; // Rc<RefCell<Option<usize>>> にアクセス
-    
-            let from_date_option = from_date_rc.borrow(); // Ref<Option<NaiveDateTime>>
-            let dragging_id_option = dragging_id_rc.borrow(); // Ref<Option<usize>>
-    
-            if let Some(_from_date) = *from_date_option { // Option<NaiveDateTime> に変換
-                if let Some(dragging_id) = *dragging_id_option { // Option<usize> に変換
-                    let diff_days = (e.movement_x() as i64) / 30; // Adjust sensitivity here
+            let from_date_rc = &**from_date_ref;
+            let dragging_id_rc = &**dragging_task_id;
+
+            let from_date_option = from_date_rc.borrow();
+            let dragging_id_option = dragging_id_rc.borrow();
+
+            if let Some(_from_date) = *from_date_option {
+                if let Some(dragging_id) = *dragging_id_option {
+                    let diff_days = (e.movement_x() as i64) / 50;
                     let current_tasks = (*tasks).clone();
-                    let new_tasks: Vec<Task> = current_tasks.iter().map(|task| {
-                        if task.id == dragging_id {
-                            let new_start_date = task.start_date + Duration::days(diff_days); 
-                            let new_end_date = task.end_date + Duration::days(diff_days);
-                            Task {
-                                start_date: new_start_date,
-                                end_date: new_end_date,
-                                ..task.clone()
+                    let new_tasks: Vec<Task> = current_tasks
+                        .iter()
+                        .map(|task| {
+                            if task.id == dragging_id {
+                                let new_start_date = task.start_date + Duration::days(diff_days);
+                                let new_end_date = task.end_date + Duration::days(diff_days);
+                                Task {
+                                    start_date: new_start_date,
+                                    end_date: new_end_date,
+                                    ..task.clone()
+                                }
+                            } else {
+                                task.clone()
                             }
-                        } else {
-                            task.clone()
-                        }
-                    }).collect();
+                        })
+                        .collect();
                     tasks.set(new_tasks);
                 }
             }
         })
     };
-    
 
-    // マウスアップ時にリセット
     let on_mouse_up = {
         let from_date_ref = from_date_ref.clone();
         let dragging_task_id = dragging_task_id.clone();
@@ -107,24 +132,23 @@ pub fn gantt_chart() -> Html {
         })
     };
 
-    // グローバルイベントリスナーを登録
     {
         let on_mouse_move = on_mouse_move.clone();
         let on_mouse_up = on_mouse_up.clone();
         use_effect_with((), move |_| {
-                let move_listener = EventListener::new(&gloo::utils::window(), "mousemove", move |e: &web_sys::Event| {
-                    if let Ok(mouse_event) = e.clone().dyn_into::<web_sys::MouseEvent>() {
-                        on_mouse_move.emit(mouse_event);
-                    }
-                });
-                let up_listener = EventListener::new(&gloo::utils::window(), "mouseup", move |e: &web_sys::Event| {
-                    if let Ok(mouse_event) = e.clone().dyn_into::<web_sys::MouseEvent>() {
-                        on_mouse_up.emit(mouse_event);
-                    }
-                });
-        
-                move || drop((move_listener, up_listener))
+            let move_listener = EventListener::new(&gloo::utils::window(), "mousemove", move |e: &web_sys::Event| {
+                if let Ok(mouse_event) = e.clone().dyn_into::<web_sys::MouseEvent>() {
+                    on_mouse_move.emit(mouse_event);
+                }
             });
+            let up_listener = EventListener::new(&gloo::utils::window(), "mouseup", move |e: &web_sys::Event| {
+                if let Ok(mouse_event) = e.clone().dyn_into::<web_sys::MouseEvent>() {
+                    on_mouse_up.emit(mouse_event);
+                }
+            });
+
+            move || drop((move_listener, up_listener))
+        });
     }
 
     let tasks_clone = (*tasks).clone();
@@ -134,11 +158,10 @@ pub fn gantt_chart() -> Html {
             <div>
                 <h2>{ "ガントチャート" }</h2>
                 <div class={grid_style}>
-                    { for (0..30).map(|_row| html! { 
-                            { for (0..30).map(|_col| html! {
-                                <div style="width: 30px; height: 40px; background: white; border: 1px solid #ddd;"></div>
-
-                            }) }
+                    { for (0..30).map(|_row| html! {
+                        { for (0..30).map(|_col| html! {
+                            <div class={cell_style.clone()}></div>
+                        }) }
                     }) }
                     {
                         tasks_clone.iter().enumerate().map(|(i, task)| {
@@ -150,22 +173,17 @@ pub fn gantt_chart() -> Html {
                             let column_end = if end_day > 0 && end_day <= 30 { end_day + 1 } else { 31 };
                             html! {
                                 <div
-                                    style={format!(
-                                        "grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {}; color: white; text-align: center; padding: 5px; cursor: pointer;",
-                                        column_start,
-                                        column_end,
-                                        row_index,
-                                        task.color
-                                    )}
+                                    class={task_style.clone()}
+                                    style={format!("grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {};", column_start, column_end, row_index, task.color)}
                                     onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e, task_clone.clone()))}
                                     onmousemove={on_mouse_move.clone()}
                                     onmouseup={on_mouse_up.clone()}
-                                > 
+                                >
                                     { task.name }
-                                </div> 
+                                </div>
                             }
-                        }).collect::<Html>()}
-                    
+                        }).collect::<Html>()
+                    }
                 </div>
             </div>
         </>

@@ -27,7 +27,7 @@ fn initial_tasks() -> Vec<Task> {
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
     let tasks = use_state(initial_tasks);
-    let zoom_level = use_state(|| 50);
+    let zoom_level = use_state(|| 100); // ズームレベルを100%に設定
     let scroll_offset = use_state(|| 0);
     let selected_task = use_state(|| None::<Rc<Task>>);
 
@@ -51,7 +51,7 @@ pub fn gantt_chart() -> Html {
     let remove_task = {
         let tasks = tasks.clone();
         Callback::from(move |id: usize| {
-            let new_tasks: Vec<Task> = (*tasks).clone().into_iter().filter(|task| task.id != id).collect();
+            let new_tasks = (*tasks).clone().into_iter().filter(|task| task.id != id).collect();
             tasks.set(new_tasks);
         })
     };
@@ -60,7 +60,7 @@ pub fn gantt_chart() -> Html {
         let tasks = tasks.clone();
         let selected_task = selected_task.clone();
         Callback::from(move |(id, name, start, end): (usize, String, NaiveDateTime, NaiveDateTime)| {
-            let new_tasks: Vec<Task> = (*tasks).clone().into_iter().map(|mut task| {
+            let new_tasks = (*tasks).clone().into_iter().map(|mut task| {
                 if task.id == id {
                     task.name = name.clone();
                     task.start_date = start;
@@ -105,24 +105,30 @@ pub fn gantt_chart() -> Html {
 
     html! {
         <>
-            <button onclick={add_task}>{ "Add Task" }</button>
-            <button onclick={Callback::from(move |_| {
-                log::info!("tasks: {:?}", *tasks);
-                log::info!("zoom_level: {:?}", *zoom_level);
-            })}>{ "Debug" }</button>
-            <button onclick={zoom_in}>{ "Zoom In" }</button>
-            <button onclick={zoom_out}>{ "Zoom Out" }</button>
-            <button onclick={scroll_left}>{ "Scroll Left" }</button>
-            <button onclick={scroll_right}>{ "Scroll Right" }</button>
-            <div class={classes!("gantt-container")} style={format!("width: {}%;", *zoom_level_clone)}>
-                <div class={classes!(grid_style())} style={format!("transform: translateX(-{}px);", *scroll_offset)}>
-                { for (*tasks_clone).iter().map(|task| {
-                        let remove_task = remove_task.clone();
-                        let on_input_name = on_input_name.clone();
-                        html! {
-                            <TaskView task={Rc::new(task.clone())} remove_task={remove_task} on_input_name={on_input_name} />
-                        }
-                    }) }
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <button onclick={add_task}>{ "Add Task" }</button>
+                    <button onclick={Callback::from(move |_| {
+                        log::info!("tasks: {:?}", *tasks);
+                        log::info!("zoom_level: {:?}", *zoom_level);
+                    })}>{ "Debug" }</button>
+                </div>
+                <div>
+                    <button onclick={zoom_in}>{ "Zoom In" }</button>
+                    <button onclick={zoom_out}>{ "Zoom Out" }</button>
+                    <button onclick={scroll_left}>{ "Scroll Left" }</button>
+                    <button onclick={scroll_right}>{ "Scroll Right" }</button>
+                </div>
+            </div>
+            <div class={classes!("gantt-container")} style={format!("width: 100%; overflow-x: auto;")}> 
+                <div class={classes!(grid_style())} style={format!("transform: translateX(-{}px); grid-template-columns: repeat(30, {}px);", *scroll_offset, *zoom_level_clone)}>
+                    { for tasks_clone.iter().map(|task| {
+                            let remove_task = remove_task.clone();
+                            let on_input_name = on_input_name.clone();
+                            html! {
+                                <TaskView task={Rc::new(task.clone())} remove_task={remove_task} on_input_name={on_input_name} />
+                            }
+                        }) }
                 </div>
             </div>
         </>
@@ -143,7 +149,7 @@ fn task_view(props: &TaskViewProps) -> Html {
     let on_input_name = props.on_input_name.clone();
     let task_id = task.id;
     html! {
-        <div class={classes!(task_style())} style={format!("background: {};", task.color)}>
+        <div class={classes!(task_style())} style={format!("background: {}; height: 30px; border: 1px solid black; border-radius: 5px;", task.color)}>
             <input
                 value={task.name.clone()}
                 oninput={Callback::from(move |e: InputEvent| {

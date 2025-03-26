@@ -31,7 +31,6 @@ pub fn gantt_chart() -> Html {
     let scroll_offset = use_state(|| 0);
     let selected_task = use_state(|| None::<Rc<Task>>);
 
-
     let add_task = {
         let tasks = tasks.clone();
         Callback::from(move |_| {
@@ -52,7 +51,7 @@ pub fn gantt_chart() -> Html {
     let remove_task = {
         let tasks = tasks.clone();
         Callback::from(move |id: usize| {
-            let new_tasks = (*tasks).clone().into_iter().filter(|task| task.id != id).collect();
+            let new_tasks: Vec<Task> = (*tasks).clone().into_iter().filter(|task| task.id != id).collect();
             tasks.set(new_tasks);
         })
     };
@@ -61,7 +60,7 @@ pub fn gantt_chart() -> Html {
         let tasks = tasks.clone();
         let selected_task = selected_task.clone();
         Callback::from(move |(id, name, start, end): (usize, String, NaiveDateTime, NaiveDateTime)| {
-            let new_tasks = (*tasks).clone().into_iter().map(|mut task| {
+            let new_tasks: Vec<Task> = (*tasks).clone().into_iter().map(|mut task| {
                 if task.id == id {
                     task.name = name.clone();
                     task.start_date = start;
@@ -101,6 +100,9 @@ pub fn gantt_chart() -> Html {
         })
     };
 
+    let zoom_level_clone = zoom_level.clone();
+    let tasks_clone = tasks.clone();
+
     html! {
         <>
             <button onclick={add_task}>{ "Add Task" }</button>
@@ -112,13 +114,13 @@ pub fn gantt_chart() -> Html {
             <button onclick={zoom_out}>{ "Zoom Out" }</button>
             <button onclick={scroll_left}>{ "Scroll Left" }</button>
             <button onclick={scroll_right}>{ "Scroll Right" }</button>
-            <div class={classes!("gantt-container")} style={format!("width: {}%;", *zoom_level)}>
+            <div class={classes!("gantt-container")} style={format!("width: {}%;", *zoom_level_clone)}>
                 <div class={classes!(grid_style())} style={format!("transform: translateX(-{}px);", *scroll_offset)}>
-                { for tasks.clone().iter().map(|task| {
+                { for (*tasks_clone).iter().map(|task| {
                         let remove_task = remove_task.clone();
                         let on_input_name = on_input_name.clone();
                         html! {
-                            <TaskView task={task} remove_task={remove_task} on_input_name={on_input_name} />
+                            <TaskView task={Rc::new(task.clone())} remove_task={remove_task} on_input_name={on_input_name} />
                         }
                     }) }
                 </div>
@@ -129,17 +131,16 @@ pub fn gantt_chart() -> Html {
 
 #[derive(Properties, PartialEq)]
 struct TaskViewProps {
-    task: Task,
+    task: Rc<Task>,
     remove_task: Callback<usize>,
     on_input_name: Callback<(usize, String, NaiveDateTime, NaiveDateTime)>,
 }
 
 #[function_component(TaskView)]
 fn task_view(props: &TaskViewProps) -> Html {
-    let task = &props.task;
+    let task = props.task.clone();
     let remove_task = props.remove_task.clone();
     let on_input_name = props.on_input_name.clone();
-    let task = Rc::new(props.task.clone());
     let task_id = task.id;
     html! {
         <div class={classes!(task_style())} style={format!("background: {};", task.color)}>

@@ -373,3 +373,48 @@ pub fn title_logo() -> Style {
       "#
   )).unwrap()
 }
+
+pub fn grid_style() -> Style {
+  Style::new(css!(
+      r#"
+          display: grid;
+          grid-template-columns: repeat(30, 50px);
+          grid-template-rows: repeat(5, 60px);
+          gap: 4px;
+          background: #f0f0f0;
+          padding: 20px;
+          border-radius: 10px;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      "#
+  )).unwrap()
+}
+
+pub fn cell_style() -> Style { 
+  Style::new(css!(
+      r#"
+          width: 50px;
+          height: 60px;
+          background: white;
+          border: 1px solid #ddd;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+      "#
+  )).unwrap()
+}
+
+pub fn task_style() -> Style {
+  Style::new(css!(
+      r#"
+          color: white;
+          text-align: center;
+          padding: 8px;
+          cursor: pointer;
+          border-radius: 5px;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+      "#
+  )).unwrap()
+}

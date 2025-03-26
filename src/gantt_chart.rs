@@ -5,7 +5,7 @@ use chrono::Datelike;
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
-use stylist::style;
+use crate::styles::*;
 
 use chrono::{NaiveDateTime, Duration};
 use gloo_events::EventListener;
@@ -30,47 +30,6 @@ fn initial_tasks() -> Vec<Task> {
 
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
-    let grid_style = style!(
-        r#"
-        display: grid;
-        grid-template-columns: repeat(30, 50px);
-        grid-template-rows: repeat(5, 60px);
-        gap: 4px;
-        background: #f0f0f0;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        "#
-    )
-    .unwrap();
-
-    let cell_style = style!(
-        r#"
-        width: 50px;
-        height: 60px;
-        background: white;
-        border: 1px solid #ddd;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        "#
-    )
-    .unwrap();
-
-    let task_style = style!(
-        r#"
-        color: white;
-        text-align: center;
-        padding: 8px;
-        cursor: pointer;
-        border-radius: 5px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        "#
-    )
-    .unwrap();
 
     let tasks = use_state(initial_tasks);
     let from_date_ref = use_state(|| Rc::new(RefCell::new(None)));
@@ -157,10 +116,10 @@ pub fn gantt_chart() -> Html {
         <>
             <div>
                 <h2>{ "ガントチャート" }</h2>
-                <div class={grid_style}>
+                <div class={classes!(grid_style())}>
                     { for (0..30).map(|_row| html! {
                         { for (0..30).map(|_col| html! {
-                            <div class={cell_style.clone()}></div>
+                            <div class={classes!(cell_style())}></div>
                         }) }
                     }) }
                     {
@@ -173,7 +132,7 @@ pub fn gantt_chart() -> Html {
                             let column_end = if end_day > 0 && end_day <= 30 { end_day + 1 } else { 31 };
                             html! {
                                 <div
-                                    class={task_style.clone()}
+                                    class={classes!(task_style())}
                                     style={format!("grid-column-start: {}; grid-column-end: {}; grid-row-start: {}; background: {};", column_start, column_end, row_index, task.color)}
                                     onmousedown={on_mouse_down.reform(move |e: MouseEvent| (e, task_clone.clone()))}
                                     onmousemove={on_mouse_move.clone()}

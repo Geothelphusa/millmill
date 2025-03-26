@@ -395,7 +395,7 @@ pub fn cell_style() -> Style {
           width: 50px;
           height: 60px;
           background: white;
-          border: 1px solid #ddd;
+          border: 1px solid #eee;
           display: flex;
           justify-content: center;
           align-items: center;
@@ -415,6 +415,11 @@ pub fn task_style() -> Style {
           display: flex;
           justify-content: center;
           align-items: center;
+
+          &:hover {
+              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+              transform: translateY(-2px);
+        }
       "#
   )).unwrap()
 }

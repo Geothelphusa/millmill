@@ -5,7 +5,7 @@ use chrono::Datelike;
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
 use yew::prelude::*;
-use crate::styles::*;
+use crate::styles::*; // スタイルモジュールをインポート
 
 use chrono::{NaiveDateTime, Duration};
 use gloo_events::EventListener;
@@ -115,7 +115,7 @@ pub fn gantt_chart() -> Html {
     html! {
         <>
             <div>
-                <h2>{ "ガントチャート" }</h2>
+                <h2>{ "Gantt Chart" }</h2>
                 <div class={classes!(grid_style())}>
                     { for (0..30).map(|_row| html! {
                         { for (0..30).map(|_col| html! {

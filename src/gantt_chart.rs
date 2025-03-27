@@ -206,8 +206,8 @@ pub fn gantt_chart() -> Html {
                 </div>
             }
             <div 
-                class={classes!("gantt-container")} 
-                style={format!("width: 100%; overflow-x: auto;")}
+                class={classes!("gantt-container", dropdown_styles())} 
+                style={format!("width: 100%; overflow-x: auto; background-color: #ffffff;")}
                 onwheel={on_wheel}
             > 
                 <div style={format!("display: flex; flex-direction: column; transform: translateX(-{}px);", *scroll_offset)}>
@@ -238,26 +238,40 @@ fn task_view(props: &TaskViewProps) -> Html {
     let on_input_name = props.on_input_name.clone();
     let task_id = task.id;
     let task_color = task.color.clone();
+    let task_name = task.name.clone();
+    let task_start_date = task.start_date;
+    let task_end_date = task.end_date;
     let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-    let start_offset = (task.start_date - base_date).num_days() * 100;
-    let duration = (task.end_date - task.start_date).num_days() * 100;
+    let start_offset = (task_start_date - base_date).num_days() * 100;
+    let duration = (task_end_date - task_start_date).num_days() * 100;
     
     html! {
         <div style={format!("display: flex; align-items: center; margin: 5px 0;")}>
             <div style={format!("width: 200px;")}>
                 <input
-                    value={task.name.clone()}
+                    value={task_name.clone()}
                     oninput={Callback::from(move |e: InputEvent| {
                         let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                        on_input_name.emit((task_id, input.value(), task.start_date, task.end_date));
+                        on_input_name.emit((task_id, input.value(), task_start_date, task_end_date));
                     })} />
             </div>
             <div style={format!("position: relative; flex-grow: 1; height: 30px;")}>
-                <div style={format!("position: absolute; left: {}px; width: {}px; background: {}; height: 30px; border: 1px solid black; border-radius: 5px;", start_offset, duration, task_color)}>
+                <div 
+                    style={format!(
+                        "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
+                        border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
+                        justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;",
+                        start_offset, duration, task_color
+                    )}
+                >
+                    <span>{task_name}</span>
+                    <button 
+                        onclick={remove_task.reform(move |_| task_id)}
+                        style="background: none; border: none; color: white; cursor: pointer; padding: 0 5px;"
+                    >
+                        {"×"}
+                    </button>
                 </div>
-            </div>
-            <div style={format!("width: 100px;")}>
-                <button onclick={remove_task.reform(move |_| task_id)}>{ "Delete" }</button>
             </div>
         </div>
     }

@@ -173,10 +173,10 @@ pub fn gantt_chart() -> Html {
                             <input
                                 type="datetime-local"
                                 value={task_form_data.start_date.clone()}
-                                oninput={let task_form_data_clone = task_form_data.clone(); Callback::from(move |e: InputEvent| {
+                                oninput={let task_form_data = task_form_data.clone(); Callback::from(move |e: InputEvent| {
                                     let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                                    task_form_data_clone.set(TaskFormData {
-                                        name: task_form_data_clone.name.clone(),
+                                    task_form_data.set(TaskFormData {
+                                        name: task_form_data.name.clone(),
                                         start_date: input.value(),
                                         end_date: task_form_data.end_date.clone(),
                                     });
@@ -188,11 +188,11 @@ pub fn gantt_chart() -> Html {
                             <input
                                 type="datetime-local"
                                 value={task_form_data.end_date.clone()}
-                                oninput={Callback::from(move |e: InputEvent| {
+                                oninput={let task_form_data_clone = task_form_data.clone(); Callback::from(move |e: InputEvent| {
                                     let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                                    task_form_data.set(TaskFormData {
-                                        name: task_form_data.name.clone(),
-                                        start_date: task_form_data.start_date.clone(),
+                                    task_form_data_clone.set(TaskFormData {
+                                        name: task_form_data_clone.name.clone(),
+                                        start_date: task_form_data_clone.start_date.clone(),
                                         end_date: input.value(),
                                     });
                                 })}

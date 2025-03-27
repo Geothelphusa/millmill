@@ -2,6 +2,7 @@ use std::rc::Rc;
 use chrono::{Duration, NaiveDateTime};
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
+use web_sys::WheelEvent;
 
 use crate::styles::*;
 use yew::prelude::*;
@@ -27,7 +28,7 @@ fn initial_tasks() -> Vec<Task> {
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
     let tasks = use_state(initial_tasks);
-    let zoom_level = use_state(|| 100); // ズームレベルを100%に設定
+    let zoom_level = use_state(|| 100);
     let scroll_offset = use_state(|| 0);
     let selected_task = use_state(|| None::<Rc<Task>>);
 
@@ -73,24 +74,19 @@ pub fn gantt_chart() -> Html {
         })
     };
 
-    let zoom_in = {
+    let handle_wheel = {
         let zoom_level = zoom_level.clone();
-        Callback::from(move |_| zoom_level.set((*zoom_level - 10).max(20)))
-    };
-
-    let zoom_out = {
-        let zoom_level = zoom_level.clone();
-        Callback::from(move |_| zoom_level.set((*zoom_level + 10).min(100)))
-    };
-
-    let scroll_left = {
-        let scroll_offset = scroll_offset.clone();
-        Callback::from(move |_| scroll_offset.set((*scroll_offset - 50).max(0)))
-    };
-
-    let scroll_right = {
-        let scroll_offset = scroll_offset.clone();
-        Callback::from(move |_| scroll_offset.set(*scroll_offset + 50))
+        Callback::from(move |e: WheelEvent| {
+            if e.ctrl_key() {
+                e.prevent_default();
+                let delta = e.delta_y();
+                if delta < 0.0 {
+                    zoom_level.set((*zoom_level - 10).max(20));
+                } else {
+                    zoom_level.set((*zoom_level + 10).min(100));
+                }
+            }
+        })
     };
 
     let on_input_name = {
@@ -100,29 +96,23 @@ pub fn gantt_chart() -> Html {
         })
     };
 
-    let zoom_level_clone = zoom_level.clone();
-    let tasks_clone = tasks.clone();
-
     html! {
         <>
             <div style="display: flex; justify-content: space-between; align-items: center;">
                 <div>
                     <button onclick={add_task}>{ "Add Task" }</button>
-                    <button onclick={Callback::from(move |_| {
-                        log::info!("tasks: {:?}", *tasks);
-                        log::info!("zoom_level: {:?}", *zoom_level);
-                    })}>{ "Debug" }</button>
-                </div>
-                <div>
-                    <button onclick={zoom_in}>{ "Zoom In" }</button>
-                    <button onclick={zoom_out}>{ "Zoom Out" }</button>
-                    <button onclick={scroll_left}>{ "Scroll Left" }</button>
-                    <button onclick={scroll_right}>{ "Scroll Right" }</button>
                 </div>
             </div>
-            <div class={classes!("gantt-container")} style={format!("width: 100%; overflow-x: auto;")}> 
-                <div class={classes!(grid_style())} style={format!("transform: translateX(-{}px); grid-template-columns: repeat(30, {}px);", *scroll_offset, *zoom_level_clone)}>
-                    { for tasks_clone.iter().map(|task| {
+            <div 
+                class={classes!("gantt-container")} 
+                style={format!("width: 100%; overflow-x: auto;")}
+                onwheel={handle_wheel}
+            > 
+                <div 
+                    class={classes!(grid_style())} 
+                    style={format!("grid-template-columns: repeat(30, {}px);", *zoom_level)}
+                >
+                    { for tasks.iter().map(|task| {
                             let remove_task = remove_task.clone();
                             let on_input_name = on_input_name.clone();
                             html! {

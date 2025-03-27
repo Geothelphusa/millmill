@@ -379,8 +379,8 @@ pub fn grid_style() -> Style {
       r#"
           display: grid;
           grid-template-rows: repeat(10, 40px);
-          gap: 5px;
-          padding: 10px;
+          gap: 8px;
+          padding: 20px;
           background: #f5f5f5;
           border: 1px solid #ddd;
           border-radius: 5px;
@@ -405,18 +405,26 @@ pub fn cell_style() -> Style {
 pub fn task_style() -> Style {
   Style::new(css!(
       r#"
-          position: relative;
-          grid-row: span 1;
-          padding: 5px;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          min-width: 100px;
-          cursor: move;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          transition: all 0.2s ease;
-          &:hover {
-              box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          padding: 5px 10px;
+          margin: 2px 0;
+          border-radius: 4px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          
+          input {
+              background: transparent;
+              border: none;
+              padding: 2px 5px;
+              margin-right: 10px;
+              flex-grow: 1;
+          }
+          
+          button {
+              padding: 2px 8px;
+              font-size: 0.9em;
+              margin-left: 5px;
           }
       "#
   )).unwrap()

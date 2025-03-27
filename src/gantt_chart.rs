@@ -2,6 +2,7 @@ use std::rc::Rc;
 use chrono::{Duration, NaiveDateTime};
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
+use web_sys::WheelEvent;
 
 use crate::styles::*;
 use yew::prelude::*;
@@ -106,24 +107,24 @@ pub fn gantt_chart() -> Html {
         })
     };
 
-    let zoom_in = {
+    let on_wheel = {
         let zoom_level = zoom_level.clone();
-        Callback::from(move |_| zoom_level.set((*zoom_level - 10).max(20)))
-    };
-
-    let zoom_out = {
-        let zoom_level = zoom_level.clone();
-        Callback::from(move |_| zoom_level.set((*zoom_level + 10).min(100)))
-    };
-
-    let scroll_left = {
         let scroll_offset = scroll_offset.clone();
-        Callback::from(move |_| scroll_offset.set((*scroll_offset - 50).max(0)))
-    };
-
-    let scroll_right = {
-        let scroll_offset = scroll_offset.clone();
-        Callback::from(move |_| scroll_offset.set(*scroll_offset + 50))
+        Callback::from(move |e: WheelEvent| {
+            if e.ctrl_key() {
+                // Ctrl + ホイールでズーム
+                let delta = e.delta_y();
+                if delta < 0.0 {
+                    zoom_level.set((*zoom_level - 5).max(20));
+                } else {
+                    zoom_level.set((*zoom_level + 5).min(100));
+                }
+            } else {
+                // 通常のホイールでスクロール
+                let delta = e.delta_x();
+                scroll_offset.set((*scroll_offset + delta as i32).max(0));
+            }
+        })
     };
 
     let on_input_name = {
@@ -146,10 +147,6 @@ pub fn gantt_chart() -> Html {
                     <button onclick={add_task}>{ "Add Task" }</button>
                 </div>
                 <div>
-                    <button onclick={zoom_in}>{ "Zoom In" }</button>
-                    <button onclick={zoom_out}>{ "Zoom Out" }</button>
-                    <button onclick={scroll_left}>{ "Scroll Left" }</button>
-                    <button onclick={scroll_right}>{ "Scroll Right" }</button>
                 </div>
             </div>
             if *show_task_form {
@@ -208,8 +205,12 @@ pub fn gantt_chart() -> Html {
                     </div>
                 </div>
             }
-            <div class={classes!("gantt-container")} style={format!("width: 100%; overflow-x: auto;")}> 
-                <div class={classes!(grid_style())} style={format!("transform: translateX(-{}px); grid-template-columns: repeat(30, {}px);", *scroll_offset, *zoom_level_clone)}>
+            <div 
+                class={classes!("gantt-container")} 
+                style={format!("width: 100%; overflow-x: auto;")}
+                onwheel={on_wheel}
+            > 
+                <div style={format!("display: flex; flex-direction: column; transform: translateX(-{}px);", *scroll_offset)}>
                     { for tasks_clone.iter().map(|task| {
                             let remove_task = remove_task.clone();
                             let on_input_name = on_input_name.clone();
@@ -236,15 +237,28 @@ fn task_view(props: &TaskViewProps) -> Html {
     let remove_task = props.remove_task.clone();
     let on_input_name = props.on_input_name.clone();
     let task_id = task.id;
+    let task_color = task.color.clone();
+    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+    let start_offset = (task.start_date - base_date).num_days() * 100;
+    let duration = (task.end_date - task.start_date).num_days() * 100;
+    
     html! {
-        <div class={classes!(task_style())} style={format!("background: {}; height: 30px; border: 1px solid black; border-radius: 5px;", task.color)}>
-            <input
-                value={task.name.clone()}
-                oninput={Callback::from(move |e: InputEvent| {
-                    let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                    on_input_name.emit((task.id, input.value(), task.start_date, task.end_date));
-                })} />
+        <div style={format!("display: flex; align-items: center; margin: 5px 0;")}>
+            <div style={format!("width: 200px;")}>
+                <input
+                    value={task.name.clone()}
+                    oninput={Callback::from(move |e: InputEvent| {
+                        let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
+                        on_input_name.emit((task_id, input.value(), task.start_date, task.end_date));
+                    })} />
+            </div>
+            <div style={format!("position: relative; flex-grow: 1; height: 30px;")}>
+                <div style={format!("position: absolute; left: {}px; width: {}px; background: {}; height: 30px; border: 1px solid black; border-radius: 5px;", start_offset, duration, task_color)}>
+                </div>
+            </div>
+            <div style={format!("width: 100px;")}>
                 <button onclick={remove_task.reform(move |_| task_id)}>{ "Delete" }</button>
+            </div>
         </div>
     }
 }

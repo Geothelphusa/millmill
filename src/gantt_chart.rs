@@ -16,6 +16,7 @@ struct Task {
     color: String,
     is_dragging: bool,
     drag_offset: i64,
+    drag_start_x: f64,
 }
 
 #[derive(Clone, PartialEq)]
@@ -35,7 +36,8 @@ fn initial_tasks() -> Vec<Task> {
             end_date: base_date + Duration::days(5), 
             color: "#4CAF50".to_string(),
             is_dragging: false,
-            drag_offset: 0
+            drag_offset: 0,
+            drag_start_x: 0.0
         },
         Task { 
             id: 2, 
@@ -44,7 +46,8 @@ fn initial_tasks() -> Vec<Task> {
             end_date: base_date + Duration::days(9), 
             color: "#FF9800".to_string(),
             is_dragging: false,
-            drag_offset: 0
+            drag_offset: 0,
+            drag_start_x: 0.0
         },
         Task { 
             id: 3, 
@@ -53,7 +56,8 @@ fn initial_tasks() -> Vec<Task> {
             end_date: base_date + Duration::days(14), 
             color: "#673AB7".to_string(),
             is_dragging: false,
-            drag_offset: 0
+            drag_offset: 0,
+            drag_start_x: 0.0
         },
     ]
 }
@@ -99,6 +103,7 @@ pub fn gantt_chart() -> Html {
                     color: "#009688".to_string(),
                     is_dragging: false,
                     drag_offset: 0,
+                    drag_start_x: 0.0
                 });
                 tasks.set(new_tasks);
                 show_task_form.set(false);
@@ -166,14 +171,25 @@ pub fn gantt_chart() -> Html {
     let on_mouse_down = {
         let tasks = tasks.clone();
         let dragging_task = dragging_task.clone();
-        Callback::from(move |task_id: usize| {
-            dragging_task.set(Some(task_id));
-            let mut new_tasks = (*tasks).clone();
-            if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
-                task.is_dragging = true;
-                task.drag_offset = 0;
+        Callback::from(move |e: MouseEvent| {
+            if let Ok(Some(element)) = e.target()
+                .unwrap()
+                .unchecked_into::<web_sys::HtmlElement>()
+                .closest("[data-task-id]")
+            {
+                if let Some(task_id_str) = element.get_attribute("data-task-id") {
+                    if let Ok(task_id) = task_id_str.parse::<usize>() {
+                        dragging_task.set(Some(task_id));
+                        let mut new_tasks = (*tasks).clone();
+                        if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
+                            task.is_dragging = true;
+                            task.drag_offset = 0;
+                            task.drag_start_x = e.client_x() as f64;
+                        }
+                        tasks.set(new_tasks);
+                    }
+                }
             }
-            tasks.set(new_tasks);
         })
     };
 
@@ -191,6 +207,7 @@ pub fn gantt_chart() -> Html {
                     task.end_date = new_start + duration;
                     task.is_dragging = false;
                     task.drag_offset = 0;
+                    task.drag_start_x = 0.0;
                 }
                 tasks.set(new_tasks);
             }
@@ -203,15 +220,11 @@ pub fn gantt_chart() -> Html {
         let dragging_task = dragging_task.clone();
         Callback::from(move |e: MouseEvent| {
             if let Some(task_id) = *dragging_task {
-                let rect = e.target().unwrap().unchecked_into::<web_sys::HtmlElement>().get_bounding_client_rect();
-                let x = e.client_x() as f64 - rect.left();
-                let days_offset = (x / 100.0).round() as i64;
-                
                 let mut new_tasks = (*tasks).clone();
                 if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
-                    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-                    let original_offset = (task.start_date - base_date).num_days();
-                    task.drag_offset = days_offset - original_offset;
+                    let delta_x = e.client_x() as f64 - task.drag_start_x;
+                    let days_delta = (delta_x / 100.0).round() as i64;
+                    task.drag_offset = days_delta;
                 }
                 tasks.set(new_tasks);
             }
@@ -329,7 +342,7 @@ struct TaskViewProps {
     task: Rc<Task>,
     remove_task: Callback<usize>,
     on_input_name: Callback<(usize, String, NaiveDateTime, NaiveDateTime)>,
-    on_mouse_down: Callback<usize>,
+    on_mouse_down: Callback<MouseEvent>,
 }
 
 #[function_component(TaskView)]
@@ -348,39 +361,30 @@ fn task_view(props: &TaskViewProps) -> Html {
     let duration = (task_end_date - task_start_date).num_days() * 100;
     
     html! {
-        <div style={format!("display: flex; align-items: center; margin: 5px 0;")}>
-            <div style={format!("width: 200px;")}>
-                <input
-                    value={task_name.clone()}
-                    oninput={Callback::from(move |e: InputEvent| {
-                        let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                        on_input_name.emit((task_id, input.value(), task_start_date, task_end_date));
-                    })} />
-            </div>
-            <div style={format!("position: relative; flex-grow: 1; height: 30px;")}>
-                <div 
-                    style={format!(
-                        "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
-                        border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
-                        justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;
-                        cursor: move; {}",
-                        start_offset, duration, task_color,
-                        if task.is_dragging {
-                            "transition: none;"
-                        } else {
-                            "transition: left 0.1s ease-out;"
-                        }
-                    )}
-                    onmousedown={on_mouse_down.reform(move |_| task_id)}
+        <div style={format!("position: relative; height: 30px;")}>
+            <div 
+                data-task-id={task_id.to_string()}
+                style={format!(
+                    "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
+                    border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
+                    justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;
+                    cursor: move; {}",
+                    start_offset, duration, task_color,
+                    if task.is_dragging {
+                        "transition: none;"
+                    } else {
+                        "transition: left 0.1s ease-out;"
+                    }
+                )}
+                onmousedown={on_mouse_down}
+            >
+                <span>{task_name}</span>
+                <button 
+                    onclick={remove_task.reform(move |_| task_id)}
+                    style="background: none; border: none; color: white; cursor: pointer; padding: 0 5px;"
                 >
-                    <span>{task_name}</span>
-                    <button 
-                        onclick={remove_task.reform(move |_| task_id)}
-                        style="background: none; border: none; color: white; cursor: pointer; padding: 0 5px;"
-                    >
-                        {"×"}
-                    </button>
-                </div>
+                    {"×"}
+                </button>
             </div>
         </div>
     }

@@ -14,6 +14,8 @@ struct Task {
     start_date: NaiveDateTime,
     end_date: NaiveDateTime,
     color: String,
+    is_dragging: bool,
+    drag_offset: i64,
 }
 
 #[derive(Clone, PartialEq)]
@@ -26,9 +28,33 @@ struct TaskFormData {
 fn initial_tasks() -> Vec<Task> {
     let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
     vec![
-        Task { id: 1, name: "Task 1".to_string(), start_date: base_date, end_date: base_date + Duration::days(5), color: "#4CAF50".to_string() },
-        Task { id: 2, name: "Task 2".to_string(), start_date: base_date + Duration::days(6), end_date: base_date + Duration::days(9), color: "#FF9800".to_string() },
-        Task { id: 3, name: "Task 3".to_string(), start_date: base_date + Duration::days(10), end_date: base_date + Duration::days(14), color: "#673AB7".to_string() },
+        Task { 
+            id: 1, 
+            name: "Task 1".to_string(), 
+            start_date: base_date, 
+            end_date: base_date + Duration::days(5), 
+            color: "#4CAF50".to_string(),
+            is_dragging: false,
+            drag_offset: 0
+        },
+        Task { 
+            id: 2, 
+            name: "Task 2".to_string(), 
+            start_date: base_date + Duration::days(6), 
+            end_date: base_date + Duration::days(9), 
+            color: "#FF9800".to_string(),
+            is_dragging: false,
+            drag_offset: 0
+        },
+        Task { 
+            id: 3, 
+            name: "Task 3".to_string(), 
+            start_date: base_date + Duration::days(10), 
+            end_date: base_date + Duration::days(14), 
+            color: "#673AB7".to_string(),
+            is_dragging: false,
+            drag_offset: 0
+        },
     ]
 }
 
@@ -71,6 +97,8 @@ pub fn gantt_chart() -> Html {
                     start_date,
                     end_date,
                     color: "#009688".to_string(),
+                    is_dragging: false,
+                    drag_offset: 0,
                 });
                 tasks.set(new_tasks);
                 show_task_form.set(false);
@@ -136,15 +164,36 @@ pub fn gantt_chart() -> Html {
     };
 
     let on_mouse_down = {
+        let tasks = tasks.clone();
         let dragging_task = dragging_task.clone();
         Callback::from(move |task_id: usize| {
             dragging_task.set(Some(task_id));
+            let mut new_tasks = (*tasks).clone();
+            if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
+                task.is_dragging = true;
+                task.drag_offset = 0;
+            }
+            tasks.set(new_tasks);
         })
     };
 
     let on_mouse_up = {
+        let tasks = tasks.clone();
         let dragging_task = dragging_task.clone();
         Callback::from(move |_| {
+            if let Some(task_id) = *dragging_task {
+                let mut new_tasks = (*tasks).clone();
+                if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
+                    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+                    let new_start = base_date + Duration::days(task.drag_offset);
+                    let duration = task.end_date - task.start_date;
+                    task.start_date = new_start;
+                    task.end_date = new_start + duration;
+                    task.is_dragging = false;
+                    task.drag_offset = 0;
+                }
+                tasks.set(new_tasks);
+            }
             dragging_task.set(None);
         })
     };
@@ -154,17 +203,13 @@ pub fn gantt_chart() -> Html {
         let dragging_task = dragging_task.clone();
         Callback::from(move |e: MouseEvent| {
             if let Some(task_id) = *dragging_task {
-                let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
                 let rect = e.target().unwrap().unchecked_into::<web_sys::HtmlElement>().get_bounding_client_rect();
                 let x = e.client_x() as f64 - rect.left();
                 let days_offset = (x / 100.0).round() as i64;
                 
                 let mut new_tasks = (*tasks).clone();
                 if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
-                    let new_start = base_date + Duration::days(days_offset);
-                    let duration = task.end_date - task.start_date;
-                    task.start_date = new_start;
-                    task.end_date = new_start + duration;
+                    task.drag_offset = days_offset;
                 }
                 tasks.set(new_tasks);
             }
@@ -297,7 +342,7 @@ fn task_view(props: &TaskViewProps) -> Html {
     let task_start_date = task.start_date;
     let task_end_date = task.end_date;
     let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
-    let start_offset = (task_start_date - base_date).num_days() * 100;
+    let start_offset = (task_start_date - base_date).num_days() * 100 + if task.is_dragging { task.drag_offset * 100 } else { 0 };
     let duration = (task_end_date - task_start_date).num_days() * 100;
     
     html! {
@@ -316,7 +361,7 @@ fn task_view(props: &TaskViewProps) -> Html {
                         "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
                         border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
                         justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;
-                        cursor: move;",
+                        cursor: move; transition: left 0.1s ease-out;",
                         start_offset, duration, task_color
                     )}
                     onmousedown={on_mouse_down.reform(move |_| task_id)}

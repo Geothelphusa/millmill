@@ -2,7 +2,7 @@ use std::rc::Rc;
 use chrono::{Duration, NaiveDateTime};
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
-use web_sys::WheelEvent;
+use web_sys::{WheelEvent, MouseEvent};
 
 use crate::styles::*;
 use yew::prelude::*;
@@ -35,10 +35,11 @@ fn initial_tasks() -> Vec<Task> {
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
     let tasks = use_state(initial_tasks);
-    let zoom_level = use_state(|| 50); // ズームレベルを50%に設定
+    let zoom_level = use_state(|| 50);
     let scroll_offset = use_state(|| 0);
     let selected_task = use_state(|| None::<Rc<Task>>);
     let show_task_form = use_state(|| false);
+    let dragging_task = use_state(|| None::<usize>);
     let task_form_data = use_state(|| TaskFormData {
         name: String::new(),
         start_date: String::new(),
@@ -46,7 +47,7 @@ pub fn gantt_chart() -> Html {
     });
 
     let add_task = {
-        let tasks = tasks.clone();
+        let _tasks = tasks.clone();
         let show_task_form = show_task_form.clone();
         Callback::from(move |_| {
             show_task_form.set(true);
@@ -134,7 +135,43 @@ pub fn gantt_chart() -> Html {
         })
     };
 
-    let zoom_level_clone = zoom_level.clone();
+    let on_mouse_down = {
+        let dragging_task = dragging_task.clone();
+        Callback::from(move |task_id: usize| {
+            dragging_task.set(Some(task_id));
+        })
+    };
+
+    let on_mouse_up = {
+        let dragging_task = dragging_task.clone();
+        Callback::from(move |_| {
+            dragging_task.set(None);
+        })
+    };
+
+    let on_mouse_move = {
+        let tasks = tasks.clone();
+        let dragging_task = dragging_task.clone();
+        Callback::from(move |e: MouseEvent| {
+            if let Some(task_id) = *dragging_task {
+                let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+                let rect = e.target().unwrap().unchecked_into::<web_sys::HtmlElement>().get_bounding_client_rect();
+                let x = e.client_x() as f64 - rect.left();
+                let days_offset = (x / 100.0).round() as i64;
+                
+                let mut new_tasks = (*tasks).clone();
+                if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
+                    let new_start = base_date + Duration::days(days_offset);
+                    let duration = task.end_date - task.start_date;
+                    task.start_date = new_start;
+                    task.end_date = new_start + duration;
+                }
+                tasks.set(new_tasks);
+            }
+        })
+    };
+
+    let _zoom_level_clone = zoom_level.clone();
     let tasks_clone = tasks.clone();
     let task_form_data_name = task_form_data.clone();
     let task_form_data_start = task_form_data.clone();
@@ -209,13 +246,29 @@ pub fn gantt_chart() -> Html {
                 class={classes!("gantt-container", dropdown_styles())} 
                 style={format!("width: 100%; overflow-x: auto; background-color: #ffffff;")}
                 onwheel={on_wheel}
+                onmousemove={on_mouse_move}
+                onmouseup={on_mouse_up}
             > 
                 <div style={format!("display: flex; flex-direction: column; transform: translateX(-{}px);", *scroll_offset)}>
+                    <div class="grid-lines" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none;">
+                        { for (0..30).map(|i| html! {
+                            <div style={format!(
+                                "position: absolute; left: {}px; top: 0; bottom: 0; width: 1px; background-color: #e0e0e0;",
+                                i * 100
+                            )} />
+                        })}
+                    </div>
                     { for tasks_clone.iter().map(|task| {
                             let remove_task = remove_task.clone();
                             let on_input_name = on_input_name.clone();
+                            let on_mouse_down = on_mouse_down.clone();
                             html! {
-                                <TaskView task={Rc::new(task.clone())} remove_task={remove_task} on_input_name={on_input_name} />
+                                <TaskView 
+                                    task={Rc::new(task.clone())} 
+                                    remove_task={remove_task} 
+                                    on_input_name={on_input_name}
+                                    on_mouse_down={on_mouse_down}
+                                />
                             }
                         }) }
                 </div>
@@ -229,6 +282,7 @@ struct TaskViewProps {
     task: Rc<Task>,
     remove_task: Callback<usize>,
     on_input_name: Callback<(usize, String, NaiveDateTime, NaiveDateTime)>,
+    on_mouse_down: Callback<usize>,
 }
 
 #[function_component(TaskView)]
@@ -236,6 +290,7 @@ fn task_view(props: &TaskViewProps) -> Html {
     let task = props.task.clone();
     let remove_task = props.remove_task.clone();
     let on_input_name = props.on_input_name.clone();
+    let on_mouse_down = props.on_mouse_down.clone();
     let task_id = task.id;
     let task_color = task.color.clone();
     let task_name = task.name.clone();
@@ -260,9 +315,11 @@ fn task_view(props: &TaskViewProps) -> Html {
                     style={format!(
                         "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
                         border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
-                        justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;",
+                        justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;
+                        cursor: move;",
                         start_offset, duration, task_color
                     )}
+                    onmousedown={on_mouse_down.reform(move |_| task_id)}
                 >
                     <span>{task_name}</span>
                     <button 

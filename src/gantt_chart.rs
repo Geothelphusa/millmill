@@ -209,7 +209,9 @@ pub fn gantt_chart() -> Html {
                 
                 let mut new_tasks = (*tasks).clone();
                 if let Some(task) = new_tasks.iter_mut().find(|t| t.id == task_id) {
-                    task.drag_offset = days_offset;
+                    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+                    let original_offset = (task.start_date - base_date).num_days();
+                    task.drag_offset = days_offset - original_offset;
                 }
                 tasks.set(new_tasks);
             }
@@ -361,8 +363,13 @@ fn task_view(props: &TaskViewProps) -> Html {
                         "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
                         border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
                         justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;
-                        cursor: move; transition: left 0.1s ease-out;",
-                        start_offset, duration, task_color
+                        cursor: move; {}",
+                        start_offset, duration, task_color,
+                        if task.is_dragging {
+                            "transition: none;"
+                        } else {
+                            "transition: left 0.1s ease-out;"
+                        }
                     )}
                     onmousedown={on_mouse_down.reform(move |_| task_id)}
                 >

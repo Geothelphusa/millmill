@@ -373,3 +373,205 @@ pub fn title_logo() -> Style {
       "#
   )).unwrap()
 }
+
+pub fn grid_style() -> Style {
+  Style::new(css!(
+      r#"
+          display: grid;
+          grid-template-rows: repeat(10, 40px);
+          gap: 8px;
+          padding: 20px;
+          background: #f5f5f5;
+          border: 1px solid #ddd;
+          border-radius: 5px;
+      "#
+  )).unwrap()
+}
+
+pub fn cell_style() -> Style { 
+  Style::new(css!(
+      r#"
+          width: 50px;
+          height: 60px;
+          background: white;
+          border: 1px solid #eee;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+      "#
+  )).unwrap()
+}
+
+pub fn task_style() -> Style {
+  Style::new(css!(
+      r#"
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 5px 10px;
+          margin: 2px 0;
+          border-radius: 4px;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+          
+          input {
+              background: transparent;
+              border: none;
+              padding: 2px 5px;
+              margin-right: 10px;
+              flex-grow: 1;
+          }
+          
+          button {
+              padding: 2px 8px;
+              font-size: 0.9em;
+              margin-left: 5px;
+          }
+      "#
+  )).unwrap()
+}
+
+pub fn task_form_overlay() -> Style {
+  Style::new(css!(
+      r#"
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      "#
+  )).unwrap()
+}
+
+pub fn task_form() -> Style {
+  Style::new(css!(
+      r#"
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      
+      h3 {
+          margin-top: 0;
+          margin-bottom: 20px;
+      }
+      
+      div {
+          margin-bottom: 15px;
+      }
+      
+      div label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+      }
+      
+      div input {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+      }
+      
+      div input:focus {
+          outline: none;
+          border-color: #4CAF50;
+          box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+      }
+      
+      button {
+          margin-right: 10px;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 4px;
+          background: #4CAF50;
+          color: white;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+      }
+      
+      button:hover {
+          background: #45a049;
+      }
+      
+      button:last-child {
+          background: #f44336;
+      }
+      
+      button:last-child:hover {
+          background: #da190b;
+      }
+      "#
+  ))
+  .unwrap()
+}
+
+pub fn dropdown_styles() -> Style {
+    Style::new(css!(
+        r#"
+        .dropdown {
+            position: relative;
+            display: inline-block;
+        }
+
+        .dropbtn {
+            background-color: transparent;
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background-color: #f9f9f9;
+            min-width: 160px;
+            box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+            z-index: 1;
+            border-radius: 4px;
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            color: black;
+            padding: 12px 16px;
+            text-decoration: none;
+            display: block;
+        }
+
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .dropbtn {
+                color: #fff;
+            }
+
+            .dropdown-content {
+                background-color: #2f2f2f;
+            }
+
+            .dropdown-content a {
+                color: #fff;
+            }
+
+            .dropdown-content a:hover {
+                background-color: #3f3f3f;
+            }
+        }
+        "#
+    ))
+    .unwrap()
+}

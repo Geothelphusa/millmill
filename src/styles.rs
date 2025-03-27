@@ -378,13 +378,12 @@ pub fn grid_style() -> Style {
   Style::new(css!(
       r#"
           display: grid;
-          grid-template-columns: repeat(30, 50px);
-          grid-template-rows: repeat(5, 60px);
-          gap: 4px;
-          background: #f0f0f0;
-          padding: 20px;
-          border-radius: 10px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+          grid-template-rows: repeat(10, 40px);
+          gap: 5px;
+          padding: 10px;
+          background: #f5f5f5;
+          border: 1px solid #ddd;
+          border-radius: 5px;
       "#
   )).unwrap()
 }
@@ -406,20 +405,95 @@ pub fn cell_style() -> Style {
 pub fn task_style() -> Style {
   Style::new(css!(
       r#"
-          color: white;
-          text-align: center;
-          padding: 8px;
-          cursor: pointer;
-          border-radius: 5px;
-          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          position: relative;
+          grid-row: span 1;
+          padding: 5px;
           display: flex;
-          justify-content: center;
           align-items: center;
-
+          justify-content: space-between;
+          min-width: 100px;
+          cursor: move;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+          transition: all 0.2s ease;
           &:hover {
-              box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-              transform: translateY(-2px);
-        }
+              box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+          }
       "#
   )).unwrap()
+}
+
+pub fn task_form_overlay() -> Style {
+  Style::new(css!(
+      r#"
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      "#
+  )).unwrap()
+}
+
+pub fn task_form() -> Style {
+    Style::new(css!(
+        r#"
+        & {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+
+        & h3 {
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+
+        & div {
+            margin-bottom: 15px;
+        }
+
+        & div label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        & div input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        & button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+        }
+
+        & button:hover {
+            background: #45a049;
+        }
+
+        & button:last-child {
+            background: #f44336;
+        }
+
+        & button:last-child:hover {
+            background: #da190b;
+        }
+        "#
+    )).unwrap()
 }

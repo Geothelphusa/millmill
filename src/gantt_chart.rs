@@ -89,30 +89,31 @@ pub fn gantt_chart() -> Html {
         let show_task_form = show_task_form.clone();
         let task_form_data = task_form_data.clone();
         Callback::from(move |_| {
-            if let (Ok(start_date), Ok(end_date)) = (
-                NaiveDateTime::parse_from_str(&task_form_data.start_date, "%Y-%m-%d %H:%M:%S"),
-                NaiveDateTime::parse_from_str(&task_form_data.end_date, "%Y-%m-%d %H:%M:%S")
-            ) {
-                let mut new_tasks = (*tasks).clone();
-                let id = new_tasks.len() + 1;
-                new_tasks.push(Task {
-                    id,
-                    name: task_form_data.name.clone(),
-                    start_date,
-                    end_date,
-                    color: "#009688".to_string(),
-                    is_dragging: false,
-                    drag_offset: 0,
-                    drag_start_x: 0.0
-                });
-                tasks.set(new_tasks);
-                show_task_form.set(false);
-                task_form_data.set(TaskFormData {
-                    name: String::new(),
-                    start_date: String::new(),
-                    end_date: String::new(),
-                });
-            }
+            let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+            let start_date = NaiveDateTime::parse_from_str(&task_form_data.start_date, "%Y-%m-%dT%H:%M")
+                .unwrap_or(base_date);
+            let end_date = NaiveDateTime::parse_from_str(&task_form_data.end_date, "%Y-%m-%dT%H:%M")
+                .unwrap_or(base_date + Duration::days(1));
+
+            let mut new_tasks = (*tasks).clone();
+            let id = new_tasks.len() + 1;
+            new_tasks.push(Task {
+                id,
+                name: task_form_data.name.clone(),
+                start_date,
+                end_date,
+                color: "#009688".to_string(),
+                is_dragging: false,
+                drag_offset: 0,
+                drag_start_x: 0.0
+            });
+            tasks.set(new_tasks);
+            show_task_form.set(false);
+            task_form_data.set(TaskFormData {
+                name: String::new(),
+                start_date: String::new(),
+                end_date: String::new(),
+            });
         })
     };
 

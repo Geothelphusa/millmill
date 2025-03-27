@@ -440,65 +440,66 @@ pub fn task_form_overlay() -> Style {
 }
 
 pub fn task_form() -> Style {
-    Style::new(css!(
-        r#"
-        background: white;
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        width: 400px;
-        
-        h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
-        }
-        
-        div {
-            margin-bottom: 15px;
-            
-            label {
-                display: block;
-                margin-bottom: 5px;
-                font-weight: bold;
-            }
-            
-            input {
-                width: 100%;
-                padding: 8px;
-                border: 1px solid #ddd;
-                border-radius: 4px;
-                font-size: 14px;
-                
-                &:focus {
-                    outline: none;
-                    border-color: #4CAF50;
-                    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
-                }
-            }
-        }
-        
-        button {
-            margin-right: 10px;
-            padding: 8px 16px;
-            border: none;
-            border-radius: 4px;
-            background: #4CAF50;
-            color: white;
-            cursor: pointer;
-            transition: background-color 0.2s ease;
-            
-            &:hover {
-                background: #45a049;
-            }
-            
-            &:last-child {
-                background: #f44336;
-                
-                &:hover {
-                    background: #da190b;
-                }
-            }
-        }
-        "#
-    )).unwrap()
+  Style::new(css!(
+      r#"
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      width: 400px;
+      
+      h3 {
+          margin-top: 0;
+          margin-bottom: 20px;
+      }
+      
+      div {
+          margin-bottom: 15px;
+      }
+      
+      div label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: bold;
+      }
+      
+      div input {
+          width: 100%;
+          padding: 8px;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          font-size: 14px;
+      }
+      
+      div input:focus {
+          outline: none;
+          border-color: #4CAF50;
+          box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+      }
+      
+      button {
+          margin-right: 10px;
+          padding: 8px 16px;
+          border: none;
+          border-radius: 4px;
+          background: #4CAF50;
+          color: white;
+          cursor: pointer;
+          transition: background-color 0.2s ease;
+      }
+      
+      button:hover {
+          background: #45a049;
+      }
+      
+      button:last-child {
+          background: #f44336;
+      }
+      
+      button:last-child:hover {
+          background: #da190b;
+      }
+      "#
+  ))
+  .unwrap()
 }

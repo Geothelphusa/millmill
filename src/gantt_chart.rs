@@ -135,6 +135,9 @@ pub fn gantt_chart() -> Html {
 
     let zoom_level_clone = zoom_level.clone();
     let tasks_clone = tasks.clone();
+    let task_form_data_name = task_form_data.clone();
+    let task_form_data_start = task_form_data.clone();
+    let task_form_data_end = task_form_data.clone();
 
     html! {
         <>
@@ -157,13 +160,13 @@ pub fn gantt_chart() -> Html {
                             <label>{ "Task Name:" }</label>
                             <input
                                 type="text"
-                                value={task_form_data.name.clone()}
+                                value={task_form_data_name.name.clone()}
                                 oninput={Callback::from(move |e: InputEvent| {
                                     let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                                    task_form_data.set(TaskFormData {
+                                    task_form_data_name.set(TaskFormData {
                                         name: input.value(),
-                                        start_date: task_form_data.start_date.clone(),
-                                        end_date: task_form_data.end_date.clone(),
+                                        start_date: task_form_data_name.start_date.clone(),
+                                        end_date: task_form_data_name.end_date.clone(),
                                     });
                                 })}
                             />
@@ -172,13 +175,13 @@ pub fn gantt_chart() -> Html {
                             <label>{ "Start Date:" }</label>
                             <input
                                 type="datetime-local"
-                                value={task_form_data.start_date.clone()}
-                                oninput={let task_form_data = task_form_data.clone(); Callback::from(move |e: InputEvent| {
+                                value={task_form_data_start.start_date.clone()}
+                                oninput={Callback::from(move |e: InputEvent| {
                                     let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                                    task_form_data.set(TaskFormData {
-                                        name: task_form_data.name.clone(),
+                                    task_form_data_start.set(TaskFormData {
+                                        name: task_form_data_start.name.clone(),
                                         start_date: input.value(),
-                                        end_date: task_form_data.end_date.clone(),
+                                        end_date: task_form_data_start.end_date.clone(),
                                     });
                                 })}
                             />
@@ -187,12 +190,12 @@ pub fn gantt_chart() -> Html {
                             <label>{ "End Date:" }</label>
                             <input
                                 type="datetime-local"
-                                value={task_form_data.end_date.clone()}
-                                oninput={let task_form_data_clone = task_form_data.clone(); Callback::from(move |e: InputEvent| {
+                                value={task_form_data_end.end_date.clone()}
+                                oninput={Callback::from(move |e: InputEvent| {
                                     let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                                    task_form_data_clone.set(TaskFormData {
-                                        name: task_form_data_clone.name.clone(),
-                                        start_date: task_form_data_clone.start_date.clone(),
+                                    task_form_data_end.set(TaskFormData {
+                                        name: task_form_data_end.name.clone(),
+                                        start_date: task_form_data_end.start_date.clone(),
                                         end_date: input.value(),
                                     });
                                 })}

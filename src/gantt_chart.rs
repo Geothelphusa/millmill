@@ -9,6 +9,8 @@ use serde_json;
 
 use crate::styles::*;
 use yew::prelude::*;
+use tauri::invoke;
+use yew::platform::spawn_local;
 
 #[derive(Clone, PartialEq, Debug, ImplicitClone, Serialize, Deserialize)]
 struct Task {
@@ -169,15 +171,17 @@ pub fn gantt_chart() -> Html {
         let tasks = tasks.clone();
         let selected_task = selected_task.clone();
         Callback::from(move |(id, name, start, end): (usize, String, NaiveDateTime, NaiveDateTime)| {
+            let tasks = tasks.clone();
             let name = name.clone();
-            let new_tasks = (*tasks).clone().into_iter().map(|mut task| {
+            let mut new_tasks = (*tasks).clone();
+            for task in &mut new_tasks {
                 if task.id == id {
                     task.name = name.clone();
                     task.start_date = start;
                     task.end_date = end;
+                    break;
                 }
-                task
-            }).collect();
+            }
             tasks.set(new_tasks);
             selected_task.set(None);
         })

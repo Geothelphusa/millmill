@@ -546,6 +546,13 @@ struct TaskViewProps {
 
 #[function_component(TaskView)]
 fn task_view(props: &TaskViewProps) -> Html {
+    task_view_inner(props).unwrap_or_else(|e| {
+        log::error!("Error in task_view: {}", e);
+        Html::default()
+    })
+}
+
+fn task_view_inner(props: &TaskViewProps) -> Result<Html, Box<dyn std::error::Error>> {
     let task = &props.task;
     let remove_task = props.remove_task.clone();
     let on_input_name = props.on_input_name.clone();
@@ -556,20 +563,17 @@ fn task_view(props: &TaskViewProps) -> Html {
     let task_name = &task.name;
     let task_start_date = task.start_date;
     let task_end_date = task.end_date;
-    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap_or_else(|e| {
-        log::error!("Failed to parse base date: {}", e);
-        NaiveDateTime::default()
-    });
+    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")?;
     let start_offset = (task_start_date - base_date).num_days() * 100 + if task.is_dragging { task.drag_offset * 100 } else { 0 };
     let duration = (task_end_date - task_start_date).num_days() * 100;
     
-    html! {
+    Ok(html! {
         <div style={format!("position: relative; height: 30px;")}>
-            <div 
+            <div
                 data-task-id={task_id.to_string()}
                 style={format!(
-                    "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
-                    border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
+                    "position: absolute; left: {}px; width: {}px; background: {}; height: 30px;
+                    border: 1px solid black; border-radius: 5px; display: flex; align-items: center;
                     justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;
                     cursor: move; {}",
                     start_offset, duration, task_color,
@@ -583,7 +587,7 @@ fn task_view(props: &TaskViewProps) -> Html {
                 onclick={on_click}
             >
                 <span>{task_name}</span>
-                <button 
+                <button
                     onclick={remove_task.reform(move |_| task_id)}
                     style="background: none; border: none; color: white; cursor: pointer; padding: 0 5px;"
                 >
@@ -591,5 +595,5 @@ fn task_view(props: &TaskViewProps) -> Html {
                 </button>
             </div>
         </div>
-    }
+    })
 }

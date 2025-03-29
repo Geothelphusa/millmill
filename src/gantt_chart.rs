@@ -3,11 +3,12 @@ use chrono::{Duration, NaiveDateTime};
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
 use web_sys::{WheelEvent, MouseEvent};
+use implicit_clone::ImplicitClone;
 
 use crate::styles::*;
 use yew::prelude::*;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, ImplicitClone)]
 struct Task {
     id: usize,
     name: String,
@@ -19,7 +20,7 @@ struct Task {
     drag_start_x: f64,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, ImplicitClone)]
 struct TaskFormData {
     name: String,
     start_date: String,
@@ -80,7 +81,6 @@ pub fn gantt_chart() -> Html {
     });
 
     let add_task = {
-        let _tasks = tasks.clone();
         let show_task_form = show_task_form.clone();
         Callback::from(move |_| {
             show_task_form.set(true);
@@ -132,6 +132,7 @@ pub fn gantt_chart() -> Html {
         let tasks = tasks.clone();
         let selected_task = selected_task.clone();
         Callback::from(move |(id, name, start, end): (usize, String, NaiveDateTime, NaiveDateTime)| {
+            let name = name.clone();
             let new_tasks = (*tasks).clone().into_iter().map(|mut task| {
                 if task.id == id {
                     task.name = name.clone();
@@ -274,7 +275,7 @@ pub fn gantt_chart() -> Html {
                     if let Some(task_id_str) = element.get_attribute("data-task-id") {
                         if let Ok(task_id) = task_id_str.parse::<usize>() {
                             if let Some(task) = (*tasks).iter().find(|t| t.id == task_id) {
-                                editing_task.set(Some(task.clone()));
+                                editing_task.set(Some(task.implicit_clone()));
                             }
                         }
                     }
@@ -291,7 +292,7 @@ pub fn gantt_chart() -> Html {
             if let Some(task) = (*editing_task).clone() {
                 let mut new_tasks = (*tasks).clone();
                 if let Some(task_to_update) = new_tasks.iter_mut().find(|t| t.id == task.id) {
-                    task_to_update.name = name;
+                    task_to_update.name = name.clone();
                     task_to_update.start_date = NaiveDateTime::parse_from_str(&start_date, "%Y-%m-%dT%H:%M")
                         .unwrap_or(task_to_update.start_date);
                     task_to_update.end_date = NaiveDateTime::parse_from_str(&end_date, "%Y-%m-%dT%H:%M")
@@ -500,14 +501,14 @@ struct TaskViewProps {
 
 #[function_component(TaskView)]
 fn task_view(props: &TaskViewProps) -> Html {
-    let task = props.task.clone();
+    let task = &props.task;
     let remove_task = props.remove_task.clone();
     let on_input_name = props.on_input_name.clone();
     let on_mouse_down = props.on_mouse_down.clone();
     let on_click = props.on_click.clone();
     let task_id = task.id;
-    let task_color = task.color.clone();
-    let task_name = task.name.clone();
+    let task_color = &task.color;
+    let task_name = &task.name;
     let task_start_date = task.start_date;
     let task_end_date = task.end_date;
     let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();

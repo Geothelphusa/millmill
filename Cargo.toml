@@ -26,6 +26,7 @@ gloo-utils = "0.2.0"
 gloo-timers = "0.3.0"
 yew-hooks = "0.3.3"
 log = "0.4.27"
+implicit-clone = "0.4"
 
 [workspace]
 members = ["src-tauri"]

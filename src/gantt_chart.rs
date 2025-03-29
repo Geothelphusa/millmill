@@ -5,7 +5,10 @@ use wasm_bindgen::JsCast;
 use web_sys::{WheelEvent, MouseEvent};
 use implicit_clone::ImplicitClone;
 use serde::{Serialize, Deserialize};
-use tauri_plugin_store::Store;
+use serde_json;
+use tauri_plugin_store::StoreBuilder;
+use wasm_bindgen_futures::spawn_local;
+use tauri::invoke;
 
 use crate::styles::*;
 use yew::prelude::*;
@@ -68,14 +71,11 @@ fn initial_tasks() -> Vec<Task> {
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
     let tasks = use_state(|| {
-        // 初期タスクを読み込む
-        if let Ok(store) = Store::new("tasks.json") {
-            if let Ok(Some(tasks)) = store.get("tasks") {
-                if let Ok(tasks) = serde_json::from_value(tasks) {
-                    return tasks;
-                }
+        spawn_local(async move {
+            if let Ok(tasks) = invoke("load_tasks", ()).await {
+                // タスクを設定
             }
-        }
+        });
         initial_tasks()
     });
 
@@ -83,22 +83,20 @@ pub fn gantt_chart() -> Html {
     let save_tasks = {
         let tasks = tasks.clone();
         Callback::from(move |_| {
-            if let Ok(store) = Store::new("tasks.json") {
-                if let Ok(tasks_json) = serde_json::to_value((*tasks).clone()) {
-                    let _ = store.insert("tasks".to_string(), tasks_json);
-                    let _ = store.save();
-                }
-            }
+            let tasks = (*tasks).clone();
+            spawn_local(async move {
+                let _ = invoke("save_tasks", tasks).await;
+            });
         })
     };
 
     // タスクの更新時に保存を実行
-    use_effect_with_deps(
-        move |_| {
+    use_effect_with(
+        (*tasks).clone(),
+        move |tasks| {
             save_tasks.emit(());
             || ()
         },
-        (*tasks).clone(),
     );
 
     let zoom_level = use_state(|| 50);

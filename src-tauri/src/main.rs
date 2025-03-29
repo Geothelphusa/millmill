@@ -25,10 +25,9 @@ async fn save_tasks(app_handle: tauri::AppHandle, tasks: Vec<Task>) -> Result<()
         .build()
         .map_err(|e| e.to_string())?;
     
-    store.set("tasks".to_string(), serde_json::to_value(tasks).map_err(|e| e.to_string())?)
-        .map_err(|e| e.to_string())?;
+    store.set("tasks".to_string(), serde_json::to_value(tasks).map_err(|e| e.to_string())?)?;
     
-    store.save().map_err(|e| e.to_string())
+    store.save().map_err(|e| e.to_string())?;
 }
 
 #[tauri::command]

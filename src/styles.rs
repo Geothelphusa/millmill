@@ -575,3 +575,90 @@ pub fn dropdown_styles() -> Style {
     ))
     .unwrap()
 }
+
+pub fn floating_window_style() -> Style {
+    Style::new(css!(
+        r#"
+        .floating-window {
+            position: fixed;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-width: 300px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .floating-window h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .floating-window input {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            background: #fff;
+        }
+
+        .floating-window input:focus {
+            outline: none;
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+        }
+
+        .floating-window button {
+            margin-right: 10px;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            background: #4CAF50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        .floating-window button:hover {
+            background: #45a049;
+        }
+
+        .floating-window button:last-child {
+            background: #f44336;
+        }
+
+        .floating-window button:last-child:hover {
+            background: #da190b;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .floating-window {
+                background: #2f2f2f;
+                color: #f6f6f6;
+            }
+
+            .floating-window h3 {
+                color: #f6f6f6;
+            }
+
+            .floating-window input {
+                background: #1f1f1f;
+                border-color: #444;
+                color: #f6f6f6;
+            }
+
+            .floating-window input:focus {
+                border-color: #4CAF50;
+                box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
+            }
+        }
+        "#
+    )).unwrap()
+}

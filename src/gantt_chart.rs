@@ -240,7 +240,7 @@ pub fn gantt_chart() -> Html {
         let show_floating_window = show_floating_window.clone();
         let floating_window_position = floating_window_position.clone();
         let editing_task = editing_task.clone();
-        Callback::from(move |(e, task): (MouseEvent, Task)| {
+        Callback::from(move |e: MouseEvent| {
             if !e.ctrl_key() {
                 let window_width = 320.0; // フローティングウィンドウの推定幅
                 let window_height = 300.0; // フローティングウィンドウの推定高さ
@@ -266,7 +266,19 @@ pub fn gantt_chart() -> Html {
                 
                 show_floating_window.set(true);
                 floating_window_position.set((x, y));
-                editing_task.set(Some(task.clone()));
+                if let Ok(Some(element)) = e.target()
+                    .unwrap()
+                    .unchecked_into::<web_sys::HtmlElement>()
+                    .closest("[data-task-id]")
+                {
+                    if let Some(task_id_str) = element.get_attribute("data-task-id") {
+                        if let Ok(task_id) = task_id_str.parse::<usize>() {
+                            if let Some(task) = (*tasks).iter().find(|t| t.id == task_id) {
+                                editing_task.set(Some(task.clone()));
+                            }
+                        }
+                    }
+                }
             }
         })
     };
@@ -293,7 +305,6 @@ pub fn gantt_chart() -> Html {
     };
 
     let _zoom_level_clone = zoom_level.clone();
-    let tasks_clone = tasks.clone();
     let task_form_data_name = task_form_data.clone();
     let task_form_data_start = task_form_data.clone();
     let task_form_data_end = task_form_data.clone();
@@ -377,6 +388,10 @@ pub fn gantt_chart() -> Html {
                                 let task_clone = task.clone();
                                 let task_clone2 = task.clone();
                                 let editing_task_clone2 = editing_task_clone.clone();
+                                let editing_task_clone2_for_start = editing_task_clone2.clone();
+                                let task_clone2_for_start = task_clone2.clone();
+                                let editing_task_clone2_for_end = editing_task_clone2.clone();
+                                let task_clone2_for_end = task_clone2.clone();
                                 html! {
                                     <div>
                                         <input
@@ -394,10 +409,10 @@ pub fn gantt_chart() -> Html {
                                             value={task_clone.start_date.format("%Y-%m-%dT%H:%M").to_string()}
                                             oninput={Callback::from(move |e: InputEvent| {
                                                 let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                                                let mut new_task = task_clone2.clone().clone();
+                                                let mut new_task = task_clone2_for_start.clone();
                                                 if let Ok(date) = NaiveDateTime::parse_from_str(&input.value(), "%Y-%m-%dT%H:%M") {
                                                     new_task.start_date = date;
-                                                    editing_task_clone2.set(Some(new_task));
+                                                    editing_task_clone2_for_start.set(Some(new_task));
                                                 }
                                             })}
                                         />
@@ -406,10 +421,10 @@ pub fn gantt_chart() -> Html {
                                             value={task_clone.end_date.format("%Y-%m-%dT%H:%M").to_string()}
                                             oninput={Callback::from(move |e: InputEvent| {
                                                 let input = e.target().unwrap().unchecked_into::<web_sys::HtmlInputElement>();
-                                                let mut new_task = task_clone2.clone().clone();
+                                                let mut new_task = task_clone2_for_end.clone();
                                                 if let Ok(date) = NaiveDateTime::parse_from_str(&input.value(), "%Y-%m-%dT%H:%M") {
                                                     new_task.end_date = date;
-                                                    editing_task_clone2.clone().set(Some(new_task));
+                                                    editing_task_clone2_for_end.set(Some(new_task));
                                                 }
                                             })}
                                         />
@@ -453,7 +468,7 @@ pub fn gantt_chart() -> Html {
                             )} />
                         })}
                     </div>
-                    { for (*tasks_clone).iter().map(|task| {
+                    { for (*tasks).iter().map(|task| {
                             let remove_task = remove_task.clone();
                             let on_input_name = on_input_name.clone();
                             let on_mouse_down = on_mouse_down.clone();
@@ -464,10 +479,7 @@ pub fn gantt_chart() -> Html {
                                     remove_task={remove_task} 
                                     on_input_name={on_input_name}
                                     on_mouse_down={on_mouse_down}
-                                    on_click={Callback::<MouseEvent>::from(move |e| {
-                                        let task = task.clone();
-                                        on_click.emit((e, task));
-                                    })}
+                                    on_click={on_click}
                                 />
                             }
                         }) }

@@ -1,56 +1,72 @@
-// Prevents additional console window on Windows in release, DO NOT REMOVE!!
-#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(
+  all(not(debug_assertions), target_os = "windows"),
+  windows_subsystem = "windows"
+)]
 
-use tauri::Manager;
-use tauri_plugin_store::StoreBuilder;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use tauri::State;
 use std::sync::Mutex;
-use std::collections::HashMap;
+use std::fs::File;
+use std::io::{Read, Write};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 struct Task {
-    id: usize,
-    name: String,
-    start_date: String,
-    end_date: String,
-    color: String,
-    is_dragging: bool,
-    drag_offset: i64,
-    drag_start_x: f64,
+  name: String,
+  description: String,
+  due_date: String,
+  status: String,
+}
+
+#[derive(Debug, Default)]
+struct AppState {
+  tasks: Mutex<Vec<Task>>,
 }
 
 #[tauri::command]
-async fn save_tasks(app_handle: tauri::AppHandle, tasks: Vec<Task>) -> Result<(), String> {
-    let mut store = StoreBuilder::new(&app_handle, "tasks.json")
-        .build()
-        .map_err(|e| e.to_string())?;
-
-    let tasks_value = serde_json::to_value(tasks).map_err(|e| e.to_string())?;
-   store.set("tasks".to_string(), tasks_value);
-    store.save().map_err(|e| e.to_string())?;
-    Ok(())
+fn add_task(
+  state: State<'_, AppState>,
+  name: String,
+  description: String,
+  due_date: String,
+  status: String,
+) -> Result<(), String> {
+  let mut tasks = state.tasks.lock().unwrap();
+  let new_task = Task {
+    name,
+    description,
+    due_date,
+    status,
+  };
+  tasks.push(new_task);
+  println!("Tasks: {:?}", tasks);
+  Ok(())
 }
 
 #[tauri::command]
-async fn load_tasks(app_handle: tauri::AppHandle) -> Result<Vec<Task>, String> {
-    let store = StoreBuilder::new(&app_handle, "tasks.json")
-        .build()
-        .map_err(|e| e.to_string())?;
-    
-    match store.get("tasks") {
-        Some(tasks) => {
-            serde_json::from_value(tasks.clone()).map_err(|e| e.to_string())
-        }
-        None => {
-            Ok(Vec::new())
-        }
-    }
+fn save_tasks(state: State<'_, AppState>) -> Result<(), String> {
+  let tasks = state.tasks.lock().unwrap();
+  let json = serde_json::to_string(&*tasks).map_err(|e| e.to_string())?;
+  let mut file = File::create("tasks.json").map_err(|e| e.to_string())?;
+  file.write_all(json.as_bytes()).map_err(|e| e.to_string())?;
+  Ok(())
 }
+
+#[tauri::command]
+fn load_tasks(state: State<'_, AppState>) -> Result<Vec<Task>, String> {
+  let mut file = File::open("tasks.json").map_err(|e| e.to_string())?;
+  let mut json = String::new();
+  file.read_to_string(&mut json).map_err(|e| e.to_string())?;
+  let tasks: Vec<Task> = serde_json::from_str(&json).map_err(|e| e.to_string())?;
+  let mut app_state_tasks = state.tasks.lock().unwrap();
+  *app_state_tasks = tasks.clone();
+  Ok(tasks)
+}
+
 
 fn main() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_store::Builder::default().build())
-        .invoke_handler(tauri::generate_handler![save_tasks, load_tasks])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+  tauri::Builder::default()
+    .manage(AppState::default())
+    .invoke_handler(tauri::generate_handler![add_task, save_tasks, load_tasks])
+    .run(tauri::generate_context!())
+    .expect("error while running tauri application");
 }

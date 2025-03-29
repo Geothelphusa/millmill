@@ -21,17 +21,18 @@ struct Task {
 
 #[tauri::command]
 async fn save_tasks(app_handle: tauri::AppHandle, tasks: Vec<Task>) -> Result<(), String> {
-    let store = StoreBuilder::new(&app_handle, "tasks.json")
+    let mut store = StoreBuilder::new(&app_handle, "tasks.json")
         .build()
         .map_err(|e| e.to_string())?;
-    
-    store.set("tasks".to_string(), serde_json::to_value(tasks).map_err(|e| e.to_string())?)?;
-    
+
+    let tasks_value = serde_json::to_value(tasks).map_err(|e| e.to_string())?;
+   store.set("tasks".to_string(), tasks_value);
     store.save().map_err(|e| e.to_string())?;
+    Ok(())
 }
 
 #[tauri::command]
-async fn load_tasks(app_handle: tauri::AppHandle, tasks: Vec<Task>) -> Result<Vec<Task>, String> {
+async fn load_tasks(app_handle: tauri::AppHandle) -> Result<Vec<Task>, String> {
     let store = StoreBuilder::new(&app_handle, "tasks.json")
         .build()
         .map_err(|e| e.to_string())?;

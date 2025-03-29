@@ -6,9 +6,6 @@ use web_sys::{WheelEvent, MouseEvent};
 use implicit_clone::ImplicitClone;
 use serde::{Serialize, Deserialize};
 use serde_json;
-use tauri_plugin_store::StoreBuilder;
-use wasm_bindgen_futures::spawn_local;
-use tauri::invoke;
 
 use crate::styles::*;
 use yew::prelude::*;
@@ -33,7 +30,10 @@ struct TaskFormData {
 }
 
 fn initial_tasks() -> Vec<Task> {
-    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap_or_else(|e| {
+        log::error!("Failed to parse base date: {}", e);
+        NaiveDateTime::default()
+    });
     vec![
         Task { 
             id: 1, 
@@ -71,11 +71,6 @@ fn initial_tasks() -> Vec<Task> {
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
     let tasks = use_state(|| {
-        spawn_local(async move {
-            if let Ok(tasks) = invoke("load_tasks", ()).await {
-                // タスクを設定
-            }
-        });
         initial_tasks()
     });
 
@@ -125,11 +120,20 @@ pub fn gantt_chart() -> Html {
         let show_task_form = show_task_form.clone();
         let task_form_data = task_form_data.clone();
         Callback::from(move |_| {
-            let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+            let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap_or_else(|e| {
+                log::error!("Failed to parse base date: {}", e);
+                NaiveDateTime::default()
+            });
             let start_date = NaiveDateTime::parse_from_str(&task_form_data.start_date, "%Y-%m-%dT%H:%M")
-                .unwrap_or(base_date);
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to parse start date: {}", e);
+                    base_date
+                });
             let end_date = NaiveDateTime::parse_from_str(&task_form_data.end_date, "%Y-%m-%dT%H:%M")
-                .unwrap_or(base_date + Duration::days(1));
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to parse end date: {}", e);
+                    base_date + Duration::days(1)
+                });
 
             let mut new_tasks = (*tasks).clone();
             let id = new_tasks.len() + 1;
@@ -447,6 +451,8 @@ pub fn gantt_chart() -> Html {
                                                 if let Ok(date) = NaiveDateTime::parse_from_str(&input.value(), "%Y-%m-%dT%H:%M") {
                                                     new_task.start_date = date;
                                                     editing_task_clone2_for_start.set(Some(new_task));
+                                                } else {
+                                                    log::error!("Failed to parse start date");
                                                 }
                                             })}
                                         />
@@ -459,6 +465,8 @@ pub fn gantt_chart() -> Html {
                                                 if let Ok(date) = NaiveDateTime::parse_from_str(&input.value(), "%Y-%m-%dT%H:%M") {
                                                     new_task.end_date = date;
                                                     editing_task_clone2_for_end.set(Some(new_task));
+                                                } else {
+                                                    log::error!("Failed to parse end date");
                                                 }
                                             })}
                                         />
@@ -544,7 +552,10 @@ fn task_view(props: &TaskViewProps) -> Html {
     let task_name = &task.name;
     let task_start_date = task.start_date;
     let task_end_date = task.end_date;
-    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap_or_else(|e| {
+        log::error!("Failed to parse base date: {}", e);
+        NaiveDateTime::default()
+    });
     let start_offset = (task_start_date - base_date).num_days() * 100 + if task.is_dragging { task.drag_offset * 100 } else { 0 };
     let duration = (task_end_date - task_start_date).num_days() * 100;
     

@@ -8,7 +8,6 @@ use serde::{Serialize, Deserialize};
 use serde_json;
 use tauri_plugin_store::StoreBuilder;
 use wasm_bindgen_futures::spawn_local;
-use tauri::invoke;
 
 use crate::styles::*;
 use yew::prelude::*;

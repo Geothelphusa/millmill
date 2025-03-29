@@ -662,3 +662,82 @@ pub fn floating_window_style() -> Style {
         "#
     )).unwrap()
 }
+
+pub fn gantt_container_style() -> Style {
+    Style::new(css!(
+        r#"
+        .gantt-container {
+            width: 100%;
+            height: calc(100vh - 60px);
+            overflow-x: auto;
+            background-color: #ffffff;
+            position: relative;
+        }
+
+        .grid-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .task-bar {
+            position: absolute;
+            height: 30px;
+            background: #4CAF50;
+            border: 1px solid #388E3C;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 10px;
+            color: white;
+            font-weight: bold;
+            cursor: move;
+            z-index: 2;
+            transition: left 0.1s ease-out;
+        }
+
+        .task-bar:hover {
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .task-bar.dragging {
+            transition: none;
+            opacity: 0.8;
+        }
+
+        .floating-window {
+            position: fixed;
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            z-index: 1000;
+            min-width: 300px;
+            max-width: 90vw;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .gantt-container {
+                background-color: #1a1a1a;
+            }
+
+            .task-bar {
+                background: #2E7D32;
+                border-color: #1B5E20;
+            }
+
+            .floating-window {
+                background: #2f2f2f;
+                color: #f6f6f6;
+            }
+        }
+        "#
+    )).unwrap()
+}

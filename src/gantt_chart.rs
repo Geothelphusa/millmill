@@ -4,11 +4,13 @@ use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
 use web_sys::{WheelEvent, MouseEvent};
 use implicit_clone::ImplicitClone;
+use serde::{Serialize, Deserialize};
+use tauri_plugin_store::Store;
 
 use crate::styles::*;
 use yew::prelude::*;
 
-#[derive(Clone, PartialEq, Debug, ImplicitClone)]
+#[derive(Clone, PartialEq, Debug, ImplicitClone, Serialize, Deserialize)]
 struct Task {
     id: usize,
     name: String,
@@ -65,7 +67,40 @@ fn initial_tasks() -> Vec<Task> {
 
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
-    let tasks = use_state(initial_tasks);
+    let tasks = use_state(|| {
+        // 初期タスクを読み込む
+        if let Ok(store) = Store::new("tasks.json") {
+            if let Ok(Some(tasks)) = store.get("tasks") {
+                if let Ok(tasks) = serde_json::from_value(tasks) {
+                    return tasks;
+                }
+            }
+        }
+        initial_tasks()
+    });
+
+    // タスクの変更を保存する
+    let save_tasks = {
+        let tasks = tasks.clone();
+        Callback::from(move |_| {
+            if let Ok(store) = Store::new("tasks.json") {
+                if let Ok(tasks_json) = serde_json::to_value((*tasks).clone()) {
+                    let _ = store.insert("tasks".to_string(), tasks_json);
+                    let _ = store.save();
+                }
+            }
+        })
+    };
+
+    // タスクの更新時に保存を実行
+    use_effect_with_deps(
+        move |_| {
+            save_tasks.emit(());
+            || ()
+        },
+        (*tasks).clone(),
+    );
+
     let zoom_level = use_state(|| 50);
     let scroll_offset = use_state(|| 0);
     let selected_task = use_state(|| None::<Task>);

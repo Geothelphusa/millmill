@@ -3,11 +3,16 @@ use chrono::{Duration, NaiveDateTime};
 use stylist::yew::styled_component;
 use wasm_bindgen::JsCast;
 use web_sys::{WheelEvent, MouseEvent};
+use implicit_clone::ImplicitClone;
+use serde::{Serialize, Deserialize};
+use serde_json;
 
 use crate::styles::*;
 use yew::prelude::*;
+// use tauri::invoke;
+use yew::platform::spawn_local;
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, ImplicitClone, Serialize, Deserialize)]
 struct Task {
     id: usize,
     name: String,
@@ -19,7 +24,7 @@ struct Task {
     drag_start_x: f64,
 }
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, ImplicitClone)]
 struct TaskFormData {
     name: String,
     start_date: String,
@@ -27,7 +32,10 @@ struct TaskFormData {
 }
 
 fn initial_tasks() -> Vec<Task> {
-    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap_or_else(|e| {
+        log::error!("Failed to parse base date: {}", e);
+        NaiveDateTime::default()
+    });
     vec![
         Task { 
             id: 1, 
@@ -64,7 +72,30 @@ fn initial_tasks() -> Vec<Task> {
 
 #[styled_component(GanttChart)]
 pub fn gantt_chart() -> Html {
-    let tasks = use_state(initial_tasks);
+    let tasks = use_state(|| {
+        initial_tasks()
+    });
+
+    // タスクの変更を保存する
+    let save_tasks = {
+        let tasks = tasks.clone();
+        Callback::from(move |_| {
+            let tasks = (*tasks).clone();
+            spawn_local(async move {
+                // let _ = invoke("save_tasks", tasks).await;
+            });
+        })
+    };
+
+    // タスクの更新時に保存を実行
+    use_effect_with(
+        (*tasks).clone(),
+        move |tasks| {
+            save_tasks.emit(());
+            || ()
+        },
+    );
+
     let zoom_level = use_state(|| 50);
     let scroll_offset = use_state(|| 0);
     let selected_task = use_state(|| None::<Task>);
@@ -80,7 +111,6 @@ pub fn gantt_chart() -> Html {
     });
 
     let add_task = {
-        let _tasks = tasks.clone();
         let show_task_form = show_task_form.clone();
         Callback::from(move |_| {
             show_task_form.set(true);
@@ -92,11 +122,20 @@ pub fn gantt_chart() -> Html {
         let show_task_form = show_task_form.clone();
         let task_form_data = task_form_data.clone();
         Callback::from(move |_| {
-            let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+            let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap_or_else(|e| {
+                log::error!("Failed to parse base date: {}", e);
+                NaiveDateTime::default()
+            });
             let start_date = NaiveDateTime::parse_from_str(&task_form_data.start_date, "%Y-%m-%dT%H:%M")
-                .unwrap_or(base_date);
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to parse start date: {}", e);
+                    base_date
+                });
             let end_date = NaiveDateTime::parse_from_str(&task_form_data.end_date, "%Y-%m-%dT%H:%M")
-                .unwrap_or(base_date + Duration::days(1));
+                .unwrap_or_else(|e| {
+                    log::error!("Failed to parse end date: {}", e);
+                    base_date + Duration::days(1)
+                });
 
             let mut new_tasks = (*tasks).clone();
             let id = new_tasks.len() + 1;
@@ -132,14 +171,17 @@ pub fn gantt_chart() -> Html {
         let tasks = tasks.clone();
         let selected_task = selected_task.clone();
         Callback::from(move |(id, name, start, end): (usize, String, NaiveDateTime, NaiveDateTime)| {
-            let new_tasks = (*tasks).clone().into_iter().map(|mut task| {
+            let tasks = tasks.clone();
+            let name = name.clone();
+            let mut new_tasks = (*tasks).clone();
+            for task in &mut new_tasks {
                 if task.id == id {
                     task.name = name.clone();
                     task.start_date = start;
                     task.end_date = end;
+                    break;
                 }
-                task
-            }).collect();
+            }
             tasks.set(new_tasks);
             selected_task.set(None);
         })
@@ -274,7 +316,7 @@ pub fn gantt_chart() -> Html {
                     if let Some(task_id_str) = element.get_attribute("data-task-id") {
                         if let Ok(task_id) = task_id_str.parse::<usize>() {
                             if let Some(task) = (*tasks).iter().find(|t| t.id == task_id) {
-                                editing_task.set(Some(task.clone()));
+                                editing_task.set(Some(task.implicit_clone()));
                             }
                         }
                     }
@@ -291,7 +333,7 @@ pub fn gantt_chart() -> Html {
             if let Some(task) = (*editing_task).clone() {
                 let mut new_tasks = (*tasks).clone();
                 if let Some(task_to_update) = new_tasks.iter_mut().find(|t| t.id == task.id) {
-                    task_to_update.name = name;
+                    task_to_update.name = name.clone();
                     task_to_update.start_date = NaiveDateTime::parse_from_str(&start_date, "%Y-%m-%dT%H:%M")
                         .unwrap_or(task_to_update.start_date);
                     task_to_update.end_date = NaiveDateTime::parse_from_str(&end_date, "%Y-%m-%dT%H:%M")
@@ -413,6 +455,8 @@ pub fn gantt_chart() -> Html {
                                                 if let Ok(date) = NaiveDateTime::parse_from_str(&input.value(), "%Y-%m-%dT%H:%M") {
                                                     new_task.start_date = date;
                                                     editing_task_clone2_for_start.set(Some(new_task));
+                                                } else {
+                                                    log::error!("Failed to parse start date");
                                                 }
                                             })}
                                         />
@@ -425,6 +469,8 @@ pub fn gantt_chart() -> Html {
                                                 if let Ok(date) = NaiveDateTime::parse_from_str(&input.value(), "%Y-%m-%dT%H:%M") {
                                                     new_task.end_date = date;
                                                     editing_task_clone2_for_end.set(Some(new_task));
+                                                } else {
+                                                    log::error!("Failed to parse end date");
                                                 }
                                             })}
                                         />
@@ -500,27 +546,34 @@ struct TaskViewProps {
 
 #[function_component(TaskView)]
 fn task_view(props: &TaskViewProps) -> Html {
-    let task = props.task.clone();
+    task_view_inner(props).unwrap_or_else(|e| {
+        log::error!("Error in task_view: {}", e);
+        Html::default()
+    })
+}
+
+fn task_view_inner(props: &TaskViewProps) -> Result<Html, Box<dyn std::error::Error>> {
+    let task = &props.task;
     let remove_task = props.remove_task.clone();
     let on_input_name = props.on_input_name.clone();
     let on_mouse_down = props.on_mouse_down.clone();
     let on_click = props.on_click.clone();
     let task_id = task.id;
-    let task_color = task.color.clone();
-    let task_name = task.name.clone();
+    let task_color = &task.color;
+    let task_name = &task.name;
     let task_start_date = task.start_date;
     let task_end_date = task.end_date;
-    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S").unwrap();
+    let base_date = NaiveDateTime::parse_from_str("2025-03-01 00:00:00", "%Y-%m-%d %H:%M:%S")?;
     let start_offset = (task_start_date - base_date).num_days() * 100 + if task.is_dragging { task.drag_offset * 100 } else { 0 };
     let duration = (task_end_date - task_start_date).num_days() * 100;
     
-    html! {
+    Ok(html! {
         <div style={format!("position: relative; height: 30px;")}>
-            <div 
+            <div
                 data-task-id={task_id.to_string()}
                 style={format!(
-                    "position: absolute; left: {}px; width: {}px; background: {}; height: 30px; 
-                    border: 1px solid black; border-radius: 5px; display: flex; align-items: center; 
+                    "position: absolute; left: {}px; width: {}px; background: {}; height: 30px;
+                    border: 1px solid black; border-radius: 5px; display: flex; align-items: center;
                     justify-content: space-between; padding: 0 10px; color: white; font-weight: bold;
                     cursor: move; {}",
                     start_offset, duration, task_color,
@@ -534,7 +587,7 @@ fn task_view(props: &TaskViewProps) -> Html {
                 onclick={on_click}
             >
                 <span>{task_name}</span>
-                <button 
+                <button
                     onclick={remove_task.reform(move |_| task_id)}
                     style="background: none; border: none; color: white; cursor: pointer; padding: 0 5px;"
                 >
@@ -542,5 +595,5 @@ fn task_view(props: &TaskViewProps) -> Html {
                 </button>
             </div>
         </div>
-    }
+    })
 }

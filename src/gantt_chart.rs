@@ -9,7 +9,7 @@ use serde_json;
 
 use crate::styles::*;
 use yew::prelude::*;
-use tauri::invoke;
+// use tauri::invoke;
 use yew::platform::spawn_local;
 
 #[derive(Clone, PartialEq, Debug, ImplicitClone, Serialize, Deserialize)]
@@ -82,7 +82,7 @@ pub fn gantt_chart() -> Html {
         Callback::from(move |_| {
             let tasks = (*tasks).clone();
             spawn_local(async move {
-                let _ = invoke("save_tasks", tasks).await;
+                // let _ = invoke("save_tasks", tasks).await;
             });
         })
     };
